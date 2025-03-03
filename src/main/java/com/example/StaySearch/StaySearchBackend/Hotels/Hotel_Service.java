@@ -17,8 +17,8 @@ public class Hotel_Service {
     public List<Hotel_Entity> getAllHotels() {
         return hotelRepository.findAll();
     }
-    //Function to save the data of hotels
 
+    //Function to save the data of hotels
     public Hotel_Entity saveHotel(Hotel_Entity hotel) {
         hotel.setVersion(0);  // Ensure initial version is set
         return hotelRepository.save(hotel);
