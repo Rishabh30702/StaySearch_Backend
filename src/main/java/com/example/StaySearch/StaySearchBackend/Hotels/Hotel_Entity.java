@@ -12,17 +12,23 @@ public class Hotel_Entity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "hotel_id")
-    private Integer hotel_id;  // Change int to Integer
+    private Integer hotel_id;
 
     @Column(name = "hotel_name")
     private String hotel_name;
+
     @Column(name = "hotel_description")
     private String hotel_description;
+
     @Column(name = "hotel_place")
-    private String 	hotel_place;
+    private String hotel_place;
+
+    @Lob
+    @Column(name = "image", columnDefinition = "LONGBLOB") // Storing image as BLOB
+    private byte[] image;
 
     @Version
-    @JsonIgnore  // Ignore version in requests
+    @JsonIgnore
     @Column(nullable = false)
     private Integer version = 0;
 
@@ -36,11 +42,11 @@ public class Hotel_Entity {
     }
 
 
-    public int getHotel_id() {
+    public Integer getHotel_id() {
         return hotel_id;
     }
 
-    public void setHotel_id(int hotel_id) {
+    public void setHotel_id(Integer hotel_id) {
         this.hotel_id = hotel_id;
     }
 
@@ -74,5 +80,12 @@ public class Hotel_Entity {
 
     public void setVersion(Integer version) {
         this.version = version;
+    }
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
     }
 }

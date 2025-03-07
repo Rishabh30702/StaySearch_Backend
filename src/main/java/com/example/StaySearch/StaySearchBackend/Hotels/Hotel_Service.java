@@ -1,9 +1,16 @@
 package com.example.StaySearch.StaySearchBackend.Hotels;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,6 +19,7 @@ public class Hotel_Service {
 
     @Autowired
     private Hotel_Repository hotelRepository;
+    private static final String UPLOAD_DIR = "uploads/";
 
     //This is the function to fetch out all the hotel lists
     public List<Hotel_Entity> getAllHotels() {
@@ -64,6 +72,24 @@ public class Hotel_Service {
             hotelRepository.deleteById(hotelId);
         } else {
             throw new RuntimeException("Hotel not found with ID: " + hotelId);
+        }
+    }
+    // Upload Image
+    public Hotel_Entity uploadImage(Integer hotelId, MultipartFile file) throws IOException {
+        Hotel_Entity hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel not found with ID: " + hotelId));
+
+        hotel.setImage(file.getBytes()); // Convert image to byte array
+        return hotelRepository.save(hotel);
+    }
+
+    // Fetch Image by Hotel ID
+    public byte[] getImageByHotelId(Integer hotelId) {
+        Optional<Hotel_Entity> hotel = hotelRepository.findById(hotelId);
+        if (hotel.isPresent() && hotel.get().getImage() != null) {
+            return hotel.get().getImage();
+        } else {
+            throw new RuntimeException("Image not found for hotel ID: " + hotelId);
         }
     }
 }
