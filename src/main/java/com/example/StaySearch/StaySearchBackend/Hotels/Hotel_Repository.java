@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 @Repository
 public interface Hotel_Repository extends JpaRepository<Hotel_Entity,Integer> {
-    @Query("SELECT h FROM Hotel_Entity h WHERE h.hotel_name = :hotel_name")
-    Optional<Hotel_Entity> findByHotelName(@Param("hotel_name") String hotel_name);
+    @Query("SELECT h FROM Hotel_Entity h WHERE h.name = :name")
+    Optional<Hotel_Entity> findByHotelName(@Param("name") String name);
 }

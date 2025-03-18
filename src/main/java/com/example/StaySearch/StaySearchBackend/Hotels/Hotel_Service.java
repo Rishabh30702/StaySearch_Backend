@@ -28,7 +28,6 @@ public class Hotel_Service {
 
     //Function to save the data of hotels
     public Hotel_Entity saveHotel(Hotel_Entity hotel) {
-        hotel.setVersion(0);  // Ensure initial version is set
         return hotelRepository.save(hotel);
     }
 
@@ -51,14 +50,50 @@ public class Hotel_Service {
         if (optionalHotel.isPresent()) {
             Hotel_Entity existingHotel = optionalHotel.get();
 
-            if (updatedHotel.getHotel_name() != null) {
-                existingHotel.setHotel_name(updatedHotel.getHotel_name());
+            if (updatedHotel.getName() != null) {
+                existingHotel.setName(updatedHotel.getName());
             }
-            if (updatedHotel.getHotel_description() != null) {
-                existingHotel.setHotel_description(updatedHotel.getHotel_description());
+            if (updatedHotel.getDescription() != null) {
+                existingHotel.setDescription(updatedHotel.getDescription());
             }
-            if (updatedHotel.getHotel_place() != null) {
-                existingHotel.setHotel_place(updatedHotel.getHotel_place());
+            if (updatedHotel.getDestination() != null) {
+                existingHotel.setDestination(updatedHotel.getDestination());
+            }
+            if (updatedHotel.getPrice() != null) {
+                existingHotel.setPrice(updatedHotel.getPrice());
+            }
+            if (updatedHotel.getLat() != null) {
+                existingHotel.setLat(updatedHotel.getLat());
+            }
+            if (updatedHotel.getLng() != null) {
+                existingHotel.setLng(updatedHotel.getLng());
+            }
+            if (updatedHotel.getRating() != null) {
+                existingHotel.setRating(updatedHotel.getRating());
+            }
+            if (updatedHotel.getReviews() != null) {
+                existingHotel.setReviews(updatedHotel.getReviews());
+            }
+            if (updatedHotel.getLiked() != null) {
+                existingHotel.setLiked(updatedHotel.getLiked());
+            }
+            if (updatedHotel.getAddress() != null) {
+                existingHotel.setAddress(updatedHotel.getAddress());
+            }
+            if (updatedHotel.getCheckIn() != null) {
+                existingHotel.setCheckIn(updatedHotel.getCheckIn());
+            }
+            if (updatedHotel.getCheckOut() != null) {
+                existingHotel.setCheckOut(updatedHotel.getCheckOut());
+            }
+            if (updatedHotel.getGuests() != null) {
+                existingHotel.setGuests(updatedHotel.getGuests());
+            }
+            if (updatedHotel.getRooms() != null) {
+                existingHotel.setRooms(updatedHotel.getRooms());
+            }
+            if (updatedHotel.getImage() != null) {
+                existingHotel.setImage(updatedHotel.getImage());
             }
 
             return hotelRepository.save(existingHotel);
@@ -66,6 +101,7 @@ public class Hotel_Service {
             throw new RuntimeException("Hotel not found with ID: " + hotelId);
         }
     }
+
     //This is the function to delete the record according to the hotel Id
     public void deleteById(Integer hotelId) {
         if (hotelRepository.existsById(hotelId)) {
