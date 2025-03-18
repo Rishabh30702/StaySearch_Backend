@@ -1,13 +1,25 @@
 # Use OpenJDK 17 as base image
-FROM openjdk:17
+FROM openjdk:17 AS build
 
-# Set the working directory inside the container
+# Set the working directory for the build
 WORKDIR /app
 
-# Copy the built JAR file into the container
-COPY target/StaySearchBackend-0.0.1-SNAPSHOT.jar app.jar
+# Copy the Maven project files
+COPY . .
 
-# Expose the port your app runs on (change if needed)
+# Build the application (Maven will create the JAR in the target folder)
+RUN ./mvnw clean package -DskipTests
+
+# Use a new, smaller image for running the JAR
+FROM openjdk:17
+
+# Set the working directory for the final container
+WORKDIR /app
+
+# Copy the JAR from the build stage
+COPY --from=build /app/target/StaySearchBackend-0.0.1-SNAPSHOT.jar app.jar
+
+# Expose the port your app runs on
 EXPOSE 8080
 
 # Command to run the application
