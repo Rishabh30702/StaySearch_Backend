@@ -12,6 +12,7 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("v1")
+@CrossOrigin(origins = "*")
 public class Hotel_Controller {
 
     @Autowired
