@@ -26,9 +26,9 @@ public class Hotel_Entity {
     @Column(name = "price", precision = 10, scale = 2) // Storing price as decimal
     private BigDecimal price;
 
-    @Lob
-    @Column(name = "image", columnDefinition = "LONGBLOB") // Storing image as BLOB
-    private byte[] image;
+    @Column(name = "image_url")  // Store image as URL instead of BLOB
+    private String imageUrl;
+
 
     @Column(name = "lat")
     private Double lat;
@@ -70,14 +70,14 @@ public class Hotel_Entity {
     }
 
     // Constructor with all fields
-    public Hotel_Entity(String name, String destination, String description, BigDecimal price, byte[] image,
+    public Hotel_Entity(String name, String destination, String description, BigDecimal price,  String imageUrl,
                         Double lat, Double lng, Float rating, String reviews, Boolean liked, String address,
                         LocalDate checkIn, LocalDate checkOut, Integer guests, Integer rooms) {
         this.name = name;
         this.destination = destination;
         this.description = description;
         this.price = price;
-        this.image = image;
+        this.imageUrl = imageUrl;
         this.lat = lat;
         this.lng = lng;
         this.rating = rating;
@@ -131,12 +131,12 @@ public class Hotel_Entity {
         this.price = price;
     }
 
-    public byte[] getImage() {
-        return image;
+    public String getImageUrl() {
+        return imageUrl;
     }
 
-    public void setImage(byte[] image) {
-        this.image = image;
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public Double getLat() {

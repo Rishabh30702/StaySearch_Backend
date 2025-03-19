@@ -1,5 +1,8 @@
 package com.example.StaySearch.StaySearchBackend.Hotels;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -19,6 +23,9 @@ public class Hotel_Service {
 
     @Autowired
     private Hotel_Repository hotelRepository;
+    @Autowired
+    private Cloudinary cloudinary;
+
     private static final String UPLOAD_DIR = "uploads/";
 
     //This is the function to fetch out all the hotel lists
@@ -92,8 +99,8 @@ public class Hotel_Service {
             if (updatedHotel.getRooms() != null) {
                 existingHotel.setRooms(updatedHotel.getRooms());
             }
-            if (updatedHotel.getImage() != null) {
-                existingHotel.setImage(updatedHotel.getImage());
+            if (updatedHotel.getImageUrl() != null) {
+                existingHotel.setImageUrl(updatedHotel.getImageUrl());
             }
 
             return hotelRepository.save(existingHotel);
@@ -111,19 +118,42 @@ public class Hotel_Service {
         }
     }
     // Upload Image
+//    public Hotel_Entity uploadImage(Integer hotelId, MultipartFile file) throws IOException {
+//        Hotel_Entity hotel = hotelRepository.findById(hotelId)
+//                .orElseThrow(() -> new RuntimeException("Hotel not found with ID: " + hotelId));
+//
+//        hotel.setImage(file.getBytes()); // Convert image to byte array
+//        return hotelRepository.save(hotel);
+//    }
+//
+//    // Fetch Image by Hotel ID
+//    public byte[] getImageByHotelId(Integer hotelId) {
+//        Optional<Hotel_Entity> hotel = hotelRepository.findById(hotelId);
+//        if (hotel.isPresent() && hotel.get().getImage() != null) {
+//            return hotel.get().getImage();
+//        } else {
+//            throw new RuntimeException("Image not found for hotel ID: " + hotelId);
+//        }
+//    }
+
     public Hotel_Entity uploadImage(Integer hotelId, MultipartFile file) throws IOException {
         Hotel_Entity hotel = hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with ID: " + hotelId));
 
-        hotel.setImage(file.getBytes()); // Convert image to byte array
+        // Upload image to Cloudinary
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+        String imageUrl = uploadResult.get("url").toString();  // Get the URL of the uploaded image
+
+        // Save the image URL instead of binary data
+        hotel.setImageUrl(imageUrl);
         return hotelRepository.save(hotel);
     }
 
-    // Fetch Image by Hotel ID
-    public byte[] getImageByHotelId(Integer hotelId) {
+    // Fetch Image URL by Hotel ID
+    public String getImageByHotelId(Integer hotelId) {
         Optional<Hotel_Entity> hotel = hotelRepository.findById(hotelId);
-        if (hotel.isPresent() && hotel.get().getImage() != null) {
-            return hotel.get().getImage();
+        if (hotel.isPresent() && hotel.get().getImageUrl() != null) {
+            return hotel.get().getImageUrl();
         } else {
             throw new RuntimeException("Image not found for hotel ID: " + hotelId);
         }

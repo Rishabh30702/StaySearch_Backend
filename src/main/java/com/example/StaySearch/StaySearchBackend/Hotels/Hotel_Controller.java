@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Map;
 
 @RestController
 @RequestMapping("v1")
@@ -63,26 +64,47 @@ public class Hotel_Controller {
 
     // API to Upload Image
     // API to Upload Image
+//    @PostMapping("/uploadImage/{hotelId}")
+//    public ResponseEntity<String> uploadImage(@PathVariable Integer hotelId, @RequestParam("file") MultipartFile file) {
+//        try {
+//            hotelService.uploadImage(hotelId, file);
+//            return ResponseEntity.ok("Image uploaded successfully!");
+//        } catch (IOException e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading image: " + e.getMessage());
+//        }
+//    }
+//
+//    // API to Fetch Image
+//    @GetMapping("/getImage/{hotelId}")
+//    public ResponseEntity<byte[]> getHotelImage(@PathVariable Integer hotelId) {
+//        try {
+//            byte[] imageData = hotelService.getImageByHotelId(hotelId);
+//            return ResponseEntity.ok()
+//                    .contentType(MediaType.IMAGE_JPEG)  // Set Content-Type as JPEG
+//                    .body(imageData);
+//        } catch (RuntimeException e) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+//        }
+//    }
+
     @PostMapping("/uploadImage/{hotelId}")
     public ResponseEntity<String> uploadImage(@PathVariable Integer hotelId, @RequestParam("file") MultipartFile file) {
         try {
-            hotelService.uploadImage(hotelId, file);
-            return ResponseEntity.ok("Image uploaded successfully!");
+            Hotel_Entity hotel = hotelService.uploadImage(hotelId, file);
+            return ResponseEntity.ok("Image uploaded successfully! URL: " + hotel.getImageUrl());
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading image: " + e.getMessage());
         }
     }
 
-    // API to Fetch Image
+    // Get Image URL by Hotel ID
     @GetMapping("/getImage/{hotelId}")
-    public ResponseEntity<byte[]> getHotelImage(@PathVariable Integer hotelId) {
+    public ResponseEntity<String> getHotelImage(@PathVariable Integer hotelId) {
         try {
-            byte[] imageData = hotelService.getImageByHotelId(hotelId);
-            return ResponseEntity.ok()
-                    .contentType(MediaType.IMAGE_JPEG)  // Set Content-Type as JPEG
-                    .body(imageData);
+            String imageUrl = hotelService.getImageByHotelId(hotelId);
+            return ResponseEntity.ok(imageUrl);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Image not found: " + e.getMessage());
         }
     }
 
