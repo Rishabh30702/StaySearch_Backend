@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "hotels")
@@ -65,6 +66,11 @@ public class Hotel_Entity {
     @Column(nullable = false)
     private Integer version = 0;
 
+    @ElementCollection
+    @CollectionTable(name = "hotel_amenities", joinColumns = @JoinColumn(name = "hotel_id"))
+    @Column(name = "amenity")
+    private List<String> amenities;
+
     // Default Constructor
     public Hotel_Entity() {
     }
@@ -72,7 +78,7 @@ public class Hotel_Entity {
     // Constructor with all fields
     public Hotel_Entity(String name, String destination, String description, BigDecimal price,  String imageUrl,
                         Double lat, Double lng, Float rating, String reviews, Boolean liked, String address,
-                        LocalDate checkIn, LocalDate checkOut, Integer guests, Integer rooms) {
+                        LocalDate checkIn, LocalDate checkOut, Integer guests, Integer rooms, List<String> amenities) {
         this.name = name;
         this.destination = destination;
         this.description = description;
@@ -88,6 +94,7 @@ public class Hotel_Entity {
         this.checkOut = checkOut;
         this.guests = guests;
         this.rooms = rooms;
+        this.amenities = amenities;
     }
 
     // Getters and Setters
@@ -217,5 +224,13 @@ public class Hotel_Entity {
 
     public void setRooms(Integer rooms) {
         this.rooms = rooms;
+    }
+
+    public List<String> getAmenities() {
+        return amenities;
+    }
+
+    public void setAmenities(List<String> amenities) {
+        this.amenities = amenities;
     }
 }

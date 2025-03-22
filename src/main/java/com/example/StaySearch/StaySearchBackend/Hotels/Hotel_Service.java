@@ -101,6 +101,8 @@ public class Hotel_Service {
             }
             if (updatedHotel.getImageUrl() != null) {
                 existingHotel.setImageUrl(updatedHotel.getImageUrl());
+            }if (updatedHotel.getAmenities() != null) {
+                existingHotel.setAmenities(updatedHotel.getAmenities());
             }
 
             return hotelRepository.save(existingHotel);
