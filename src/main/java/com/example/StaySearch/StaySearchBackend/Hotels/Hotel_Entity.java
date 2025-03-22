@@ -71,14 +71,25 @@ public class Hotel_Entity {
     @Column(name = "amenity")
     private List<String> amenities;
 
+    // 🆕 ADD SUB-IMAGES LIST
+    @ElementCollection
+    @CollectionTable(name = "hotel_sub_images", joinColumns = @JoinColumn(name = "hotel_id"))
+    @Column(name = "sub_image_url")
+    private List<String> subImages;
+
+    // 🆕 ADD ONE-TO-MANY RELATIONSHIP WITH ROOMS
+    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Room> roomsList;
+
     // Default Constructor
     public Hotel_Entity() {
     }
 
     // Constructor with all fields
-    public Hotel_Entity(String name, String destination, String description, BigDecimal price,  String imageUrl,
+    public Hotel_Entity(String name, String destination, String description, BigDecimal price, String imageUrl,
                         Double lat, Double lng, Float rating, String reviews, Boolean liked, String address,
-                        LocalDate checkIn, LocalDate checkOut, Integer guests, Integer rooms, List<String> amenities) {
+                        LocalDate checkIn, LocalDate checkOut, Integer guests, Integer rooms,
+                        List<String> amenities, List<String> subImages, List<Room> roomsList) {
         this.name = name;
         this.destination = destination;
         this.description = description;
@@ -95,7 +106,10 @@ public class Hotel_Entity {
         this.guests = guests;
         this.rooms = rooms;
         this.amenities = amenities;
+        this.subImages = subImages;  // ✅ Add sub-images
+        this.roomsList = roomsList;  // ✅ Add rooms list
     }
+
 
     // Getters and Setters
     public Integer getHotelId() {
@@ -232,5 +246,20 @@ public class Hotel_Entity {
 
     public void setAmenities(List<String> amenities) {
         this.amenities = amenities;
+    }
+    public List<String> getSubImages() {
+        return subImages;
+    }
+
+    public void setSubImages(List<String> subImages) {
+        this.subImages = subImages;
+    }
+
+    public List<Room> getRoomsList() {
+        return roomsList;
+    }
+
+    public void setRoomsList(List<Room> roomsList) {
+        this.roomsList = roomsList;
     }
 }

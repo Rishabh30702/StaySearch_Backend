@@ -5,6 +5,7 @@ com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Entity.class
 com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Service.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Controller.class
 com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Entity.class
+com\example\StaySearch\StaySearchBackend\Hotels\Room.class
 com\example\StaySearch\StaySearchBackend\StaySearchBackendApplication.class
 com\example\StaySearch\StaySearchBackend\CloudinaryConfig\CloudinaryConfig.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Repository.class
