@@ -16,7 +16,9 @@ public class HotelFeedbackEntities {
     private String hotelName;
 
     @ElementCollection
-    private List<String> likedAmenities;
+    @CollectionTable(name = "liked_amenities", joinColumns = @JoinColumn(name = "feedback_id"))
+    @Column(name = "amenity")
+    private List<String> likedAmenities; // Store amenities as an array
 
     @Column(nullable = false)
     private int rating; // Star rating (1 to 5)
