@@ -1,5 +1,6 @@
 package com.example.StaySearch.StaySearchBackend.Hotels;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 @Entity
@@ -21,6 +22,7 @@ public class Room {
 
     @ManyToOne
     @JoinColumn(name = "hotel_id", nullable = false)
+    @JsonBackReference
     private Hotel_Entity hotel;
 
     // Default Constructor

@@ -1,6 +1,7 @@
 package com.example.StaySearch.StaySearchBackend.Hotels;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -79,6 +80,7 @@ public class Hotel_Entity {
 
     // 🆕 ADD ONE-TO-MANY RELATIONSHIP WITH ROOMS
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<Room> roomsList;
 
     // Default Constructor
