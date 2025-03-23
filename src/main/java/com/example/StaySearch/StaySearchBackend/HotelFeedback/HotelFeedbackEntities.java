@@ -2,6 +2,7 @@ package com.example.StaySearch.StaySearchBackend.HotelFeedback;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "hotel_feedbacks")
@@ -14,8 +15,8 @@ public class HotelFeedbackEntities {
     @Column(name = "hotel_name", nullable = false)
     private String hotelName;
 
-    @Column(name = "liked_amenities", columnDefinition = "TEXT")
-    private String likedAmenities;  // Store as a comma-separated string
+    @ElementCollection
+    private List<String> likedAmenities;
 
     @Column(nullable = false)
     private int rating; // Star rating (1 to 5)
@@ -36,7 +37,7 @@ public class HotelFeedbackEntities {
     public HotelFeedbackEntities() {
     }
 
-    public HotelFeedbackEntities(Long id, String hotelName, String likedAmenities, int rating, String description, LocalDateTime createdAt) {
+    public HotelFeedbackEntities(Long id, String hotelName, List<String> likedAmenities, int rating, String description, LocalDateTime createdAt) {
         this.id = id;
         this.hotelName = hotelName;
         this.likedAmenities = likedAmenities;
@@ -61,11 +62,11 @@ public class HotelFeedbackEntities {
         this.hotelName = hotelName;
     }
 
-    public String getLikedAmenities() {
+    public List<String> getLikedAmenities() {
         return likedAmenities;
     }
 
-    public void setLikedAmenities(String likedAmenities) {
+    public void setLikedAmenities(List<String> likedAmenities) {
         this.likedAmenities = likedAmenities;
     }
 
