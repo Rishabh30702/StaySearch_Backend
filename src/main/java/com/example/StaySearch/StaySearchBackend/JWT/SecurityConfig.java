@@ -51,12 +51,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ Enable CORS globally
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login", "/auth/register").permitAll() // ✅ Allow login & register
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll() // ✅ Allow all APIs
                 );
 
         return http.build();
+    }
+    @Bean
+    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.addAllowedOriginPattern("*"); // ✅ Allow all origins
+        config.addAllowedMethod("*"); // ✅ Allow all HTTP methods
+        config.addAllowedHeader("*"); // ✅ Allow all headers
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
 }
