@@ -1,3 +1,4 @@
+com\example\StaySearch\StaySearchBackend\JWT\EmailService.class
 com\example\StaySearch\StaySearchBackend\JWT\CustomUserDetailsService.class
 com\example\StaySearch\StaySearchBackend\JWT\SecurityConfig.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Entity.class
