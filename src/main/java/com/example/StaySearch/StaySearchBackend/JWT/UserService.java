@@ -25,16 +25,11 @@ public class UserService {
 
 
     public User registerUser(User user) {
-        if (!isValidEmail(user.getUsername())) {
-            throw new IllegalArgumentException("This is not a valid email address. Please enter a valid one.");
-        }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
-        sendWelcomeEmail(user.getUsername());
-        sendWelcomeEmail(savedUser.getUsername());
+        sendWelcomeEmail(savedUser.getUsername()); // ✅ Sends email after registration
         return savedUser;
     }
-
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
@@ -52,31 +47,4 @@ public class UserService {
 
         emailService.sendEmail(userEmail, subject, content);
     }
-    private boolean isValidEmail(String email) {
-        // Step 1: Validate Email Format using Regex
-        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
-        Pattern pattern = Pattern.compile(emailRegex);
-        Matcher matcher = pattern.matcher(email);
-
-        if (!matcher.matches()) {
-            return false;  // Invalid email format
-        }
-
-        // Step 2: Extract Domain from Email
-        String domain = email.substring(email.indexOf("@") + 1);
-
-        try {
-            // Step 3: Lookup MX Records for the Domain
-            Hashtable<String, String> env = new Hashtable<>();
-            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.dns.DnsContextFactory");
-            DirContext ctx = new InitialDirContext(env);
-            Attributes attrs = ctx.getAttributes(domain, new String[]{"MX"});
-            Attribute attr = attrs.get("MX");
-
-            return attr != null;  // Returns true if MX records exist
-        } catch (Exception e) {
-            return false;  // No MX records found, invalid domain
-        }
-    }
-
 }
