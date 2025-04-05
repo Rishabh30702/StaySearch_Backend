@@ -62,6 +62,9 @@ public class Hotel_Entity {
     @Column(name = "rooms")
     private Integer rooms;
 
+    @Column(name = "accommodation_type")
+    private String accommodationType;
+
     @Version
     @JsonIgnore
     @Column(nullable = false)
@@ -91,7 +94,8 @@ public class Hotel_Entity {
     public Hotel_Entity(String name, String destination, String description, BigDecimal price, String imageUrl,
                         Double lat, Double lng, Float rating, String reviews, Boolean liked, String address,
                         LocalDate checkIn, LocalDate checkOut, Integer guests, Integer rooms,
-                        List<String> amenities, List<String> subImages, List<Room> roomsList) {
+                        List<String> amenities, List<String> subImages, List<Room> roomsList,
+                        String accommodationType) {
         this.name = name;
         this.destination = destination;
         this.description = description;
@@ -108,9 +112,11 @@ public class Hotel_Entity {
         this.guests = guests;
         this.rooms = rooms;
         this.amenities = amenities;
-        this.subImages = subImages;  // ✅ Add sub-images
-        this.roomsList = roomsList;  // ✅ Add rooms list
+        this.subImages = subImages;
+        this.roomsList = roomsList;
+        this.accommodationType = accommodationType; // ✅ New field added here
     }
+
 
 
     // Getters and Setters
@@ -263,5 +269,12 @@ public class Hotel_Entity {
 
     public void setRoomsList(List<Room> roomsList) {
         this.roomsList = roomsList;
+    }
+    public String getAccommodationType() {
+        return accommodationType;
+    }
+
+    public void setAccommodationType(String accommodationType) {
+        this.accommodationType = accommodationType;
     }
 }
