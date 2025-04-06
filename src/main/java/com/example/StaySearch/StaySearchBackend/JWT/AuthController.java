@@ -55,11 +55,19 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUserEmail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
+
+        if (authentication == null) {
+            System.out.println("No authentication found in SecurityContext.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No authentication found");
+        }
+
+        if (!authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
+            System.out.println("User not authenticated or anonymous: " + authentication.getPrincipal());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated");
         }
 
-        String username = authentication.getName(); // this is the email
+        String username = authentication.getName();
+        System.out.println("Authenticated user: " + username);
         return ResponseEntity.ok(Map.of("email", username));
     }
 }
