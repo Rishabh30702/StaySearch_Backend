@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -69,5 +70,25 @@ public class AuthController {
         String username = authentication.getName();
         System.out.println("Authenticated user: " + username);
         return ResponseEntity.ok(Map.of("email", username));
+    }
+
+    @PostMapping("/me/update")
+    public ResponseEntity<String> updateUserProfile(@RequestBody User request) {
+        userService.saveDetailsForCurrentUser(request.getFullname(), request.getPhonenumber());
+        return ResponseEntity.ok("User profile updated successfully.");
+    }
+    @GetMapping("/allUsers")
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+        boolean deleted = userService.deleteUserById(id);
+        if (deleted) {
+            return ResponseEntity.ok("User deleted successfully.");
+        } else {
+            return ResponseEntity.status(404).body("User not found.");
+        }
     }
 }

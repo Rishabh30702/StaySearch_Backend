@@ -16,14 +16,23 @@ public class User {
     private String password;
     private String role;
 
+    @Column(name = "fullname")
+    private String fullname;
+
+    @Column(name = "phone")
+    private String phonenumber;
+
     public User() {
     }
 
-    public User(Long id, String username, String password, String role) {
+
+    public User(Long id, String username, String password, String role,String fullname, String phonenumber) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.role = role;
+        this.fullname = fullname;
+        this.phonenumber = phonenumber;
     }
 
     public Long getId() {
@@ -56,5 +65,21 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getFullname() {
+        return fullname;
+    }
+
+    public void setFullname(String fullname) {
+        this.fullname = fullname;
+    }
+
+    public String getPhonenumber() {
+        return phonenumber;
+    }
+
+    public void setPhonenumber(String phonenumber) {
+        this.phonenumber = phonenumber;
     }
 }

@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -61,4 +62,30 @@ public class UserService {
 
         return null;
     }
+
+    //Save fullname and phonenmber of the user
+    public void saveDetailsForCurrentUser(String fullname, String phonenumber) {
+        String currentEmail = getCurrentUserEmail(); // This gets the username/email of the current logged-in user
+        if (currentEmail != null) {
+            Optional<User> optionalUser = userRepository.findByUsername(currentEmail);
+            if (optionalUser.isPresent()) {
+                User user = optionalUser.get();
+                user.setFullname(fullname);
+                user.setPhonenumber(phonenumber);
+                userRepository.save(user);
+            }
+        }
+    }
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+    public boolean deleteUserById(Long id) {
+        if (userRepository.existsById(id)) {
+            userRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+
+
 }
