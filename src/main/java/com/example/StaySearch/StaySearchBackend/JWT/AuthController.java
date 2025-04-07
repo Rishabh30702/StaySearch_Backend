@@ -32,6 +32,9 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @PostMapping("/register")
     public Map<String, Object> register(@RequestBody User user) {
         userService.registerUser(user);
@@ -54,7 +57,7 @@ public class AuthController {
         return response;
     }
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUserEmail() {
+    public ResponseEntity<?> getCurrentUserDetails() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null) {
@@ -69,13 +72,27 @@ public class AuthController {
 
         String username = authentication.getName();
         System.out.println("Authenticated user: " + username);
-        return ResponseEntity.ok(Map.of("email", username));
+
+        // Assuming username is unique and corresponds to the user's email
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("email", user.getUsername());
+        response.put("fullName", user.getFullname());
+        response.put("phoneNumber", user.getPhonenumber());
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/me/update")
-    public ResponseEntity<String> updateUserProfile(@RequestBody User request) {
+    public ResponseEntity<Map<String, String>> updateUserProfile(@RequestBody User request) {
         userService.saveDetailsForCurrentUser(request.getFullname(), request.getPhonenumber());
-        return ResponseEntity.ok("User profile updated successfully.");
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "User profile updated successfully.");
+
+        return ResponseEntity.ok(response);
     }
     @GetMapping("/allUsers")
     public ResponseEntity<List<User>> getAllUsers() {
