@@ -107,12 +107,16 @@ public class AuthController {
         return ResponseEntity.ok(users);
     }
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long id) {
         boolean deleted = userService.deleteUserById(id);
+        Map<String, String> response = new HashMap<>();
+
         if (deleted) {
-            return ResponseEntity.ok("User deleted successfully.");
+            response.put("message", "User deleted successfully.");
+            return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.status(404).body("User not found.");
+            response.put("message", "User not found.");
+            return ResponseEntity.status(404).body(response);
         }
     }
     @PostMapping("/me/password")

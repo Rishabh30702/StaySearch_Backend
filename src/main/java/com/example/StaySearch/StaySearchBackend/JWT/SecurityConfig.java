@@ -61,6 +61,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/me", "/auth/wishlist/**").authenticated() // 🔐 This one needs token
+                        .requestMatchers("/auth/allUsers", "/auth/delete/**").permitAll()
                         .anyRequest().permitAll() // ✅ Everything else (including /auth/login) is public
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
