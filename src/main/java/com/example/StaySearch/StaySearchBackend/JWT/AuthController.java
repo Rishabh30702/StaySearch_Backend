@@ -108,4 +108,25 @@ public class AuthController {
             return ResponseEntity.status(404).body("User not found.");
         }
     }
+    @PostMapping("/me/password")
+    public ResponseEntity<?> updatePassword(@RequestBody Map<String, String> passwordData) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User is not authenticated"));
+        }
+
+        String username = authentication.getName();
+        String oldPassword = passwordData.get("oldPassword");
+        String newPassword = passwordData.get("newPassword");
+
+        boolean isUpdated = userService.updatePassword(username, oldPassword, newPassword);
+        if (isUpdated) {
+            return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Old password is incorrect."));
+        }
+    }
 }
