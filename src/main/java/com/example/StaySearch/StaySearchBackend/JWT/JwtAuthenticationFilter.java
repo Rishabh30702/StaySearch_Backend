@@ -27,8 +27,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
-        // ✅ Only run filter on paths like /auth/me or anything you want secured
-        return !path.startsWith("/auth/me");
+        // Skip filtering only for public endpoints
+        return path.startsWith("/auth/login") || path.startsWith("/auth/register");
     }
 
     @Override

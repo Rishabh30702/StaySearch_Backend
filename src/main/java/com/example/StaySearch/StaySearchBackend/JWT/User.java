@@ -1,8 +1,12 @@
 package com.example.StaySearch.StaySearchBackend.JWT;
 
+import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -21,6 +25,14 @@ public class User {
 
     @Column(name = "phone")
     private String phonenumber;
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_wishlist",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "hotel_id")
+    )
+    private List<Hotel_Entity> wishlist = new ArrayList<>();
 
     public User() {
     }
@@ -81,5 +93,12 @@ public class User {
 
     public void setPhonenumber(String phonenumber) {
         this.phonenumber = phonenumber;
+    }
+    public List<Hotel_Entity> getWishlist() {
+        return wishlist;
+    }
+
+    public void setWishlist(List<Hotel_Entity> wishlist) {
+        this.wishlist = wishlist;
     }
 }

@@ -1,10 +1,12 @@
 package com.example.StaySearch.StaySearchBackend.Hotels;
 
+import com.example.StaySearch.StaySearchBackend.JWT.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -85,6 +87,10 @@ public class Hotel_Entity {
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<Room> roomsList;
+
+    @ManyToMany(mappedBy = "wishlist")
+    @JsonIgnore
+    private List<User> likedByUsers = new ArrayList<>();
 
     // Default Constructor
     public Hotel_Entity() {
@@ -276,5 +282,21 @@ public class Hotel_Entity {
 
     public void setAccommodationType(String accommodationType) {
         this.accommodationType = accommodationType;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public List<User> getLikedByUsers() {
+        return likedByUsers;
+    }
+
+    public void setLikedByUsers(List<User> likedByUsers) {
+        this.likedByUsers = likedByUsers;
     }
 }

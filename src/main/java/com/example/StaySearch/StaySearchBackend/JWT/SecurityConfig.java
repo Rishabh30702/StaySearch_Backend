@@ -60,7 +60,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/me").authenticated() // 🔐 This one needs token
+                        .requestMatchers("/auth/me", "/auth/wishlist/**").authenticated() // 🔐 This one needs token
                         .anyRequest().permitAll() // ✅ Everything else (including /auth/login) is public
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

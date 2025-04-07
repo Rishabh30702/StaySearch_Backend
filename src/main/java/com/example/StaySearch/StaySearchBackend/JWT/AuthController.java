@@ -1,6 +1,9 @@
 package com.example.StaySearch.StaySearchBackend.JWT;
 
 
+import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Entity;
+import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Repository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
@@ -34,6 +38,9 @@ public class AuthController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private Hotel_Repository hotelRepository;
 
     @PostMapping("/register")
     public Map<String, Object> register(@RequestBody User user) {
@@ -129,4 +136,83 @@ public class AuthController {
                     .body(Map.of("message", "Old password is incorrect."));
         }
     }
+
+    @PostMapping("/wishlist/{hotelId}")
+    public ResponseEntity<?> addToWishlist(@PathVariable Integer hotelId, HttpServletRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        String token = jwtUtil.extractTokenFromRequest(request);
+        String email = jwtUtil.extractUsername(token);
+
+        // ADD THESE LINES BELOW 👇
+        System.out.println("Token: " + token);
+        System.out.println("Extracted email from token: " + email);
+        System.out.println("All users in DB: " + userRepository.findAll());
+
+        User user = userRepository.findByUsername(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Hotel_Entity hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+
+        if (!user.getWishlist().contains(hotel)) {
+            user.getWishlist().add(hotel);
+            userRepository.save(user);  // This also updates the join table
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Hotel added to wishlist."));
+    }
+
+    @GetMapping("/wishlist")
+    public ResponseEntity<?> getWishlist(HttpServletRequest request) {
+        String token = jwtUtil.extractTokenFromRequest(request);
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Missing or invalid token"));
+        }
+
+        String email = jwtUtil.extractUsername(token);
+
+        Optional<User> userOptional = userRepository.findByUsername(email);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
+        }
+
+        User user = userOptional.get();
+        List<Hotel_Entity> wishlist = user.getWishlist();
+
+        return ResponseEntity.ok(wishlist);
+    }
+
+    @DeleteMapping("/wishlist/{hotelId}")
+    public ResponseEntity<?> removeHotelFromWishlist(@PathVariable Integer hotelId, HttpServletRequest request) {
+        String token = jwtUtil.extractTokenFromRequest(request);
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Missing or invalid token"));
+        }
+
+        String email = jwtUtil.extractUsername(token);
+
+        Optional<User> userOptional = userRepository.findByUsername(email);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
+        }
+
+        Optional<Hotel_Entity> hotelOptional = hotelRepository.findById(hotelId);
+        if (hotelOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Hotel not found"));
+        }
+
+        User user = userOptional.get();
+        Hotel_Entity hotel = hotelOptional.get();
+
+        if (user.getWishlist().contains(hotel)) {
+            user.getWishlist().remove(hotel);
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("message", "Hotel removed from wishlist."));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Hotel not found in wishlist."));
+        }
+    }
+
 }

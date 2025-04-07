@@ -2,6 +2,7 @@ package com.example.StaySearch.StaySearchBackend.JWT;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -49,5 +50,12 @@ public class JwtUtil {
 
     private boolean isTokenExpired(String token) {
         return extractClaim(token, Claims::getExpiration).before(new Date());
+    }
+    public String extractTokenFromRequest(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7); // Removes "Bearer " prefix
+        }
+        return null;
     }
 }
