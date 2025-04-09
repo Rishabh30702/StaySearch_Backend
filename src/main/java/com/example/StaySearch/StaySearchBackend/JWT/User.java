@@ -1,6 +1,7 @@
 package com.example.StaySearch.StaySearchBackend.JWT;
 
 import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Entity;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.*;
@@ -33,6 +34,18 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "hotel_id")
     )
     private List<Hotel_Entity> wishlist = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private List<Hotel_Entity> hotels = new ArrayList<>();
+
+    public List<Hotel_Entity> getHotels() {
+        return hotels;
+    }
+
+    public void setHotels(List<Hotel_Entity> hotels) {
+        this.hotels = hotels;
+    }
 
     public User() {
     }

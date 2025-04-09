@@ -1,4 +1,5 @@
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\CloudinaryConfig\CloudinaryConfig.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\CloudinaryConfig\CloudinaryService.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Controller.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Entity.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Repository.java
@@ -11,7 +12,10 @@ D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\Sta
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Entity.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Repository.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Service.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\HotelierController.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\HotelierService.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\Room.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\RoomRepository.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\AuthController.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\CustomUserDetailsService.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\EmailService.java

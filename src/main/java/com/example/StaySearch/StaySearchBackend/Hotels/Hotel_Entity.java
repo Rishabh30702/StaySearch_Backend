@@ -1,6 +1,7 @@
 package com.example.StaySearch.StaySearchBackend.Hotels;
 
 import com.example.StaySearch.StaySearchBackend.JWT.User;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
@@ -92,16 +93,18 @@ public class Hotel_Entity {
     @JsonIgnore
     private List<User> likedByUsers = new ArrayList<>();
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    @JsonBackReference
+    private User user;
+
     // Default Constructor
     public Hotel_Entity() {
     }
 
     // Constructor with all fields
-    public Hotel_Entity(String name, String destination, String description, BigDecimal price, String imageUrl,
-                        Double lat, Double lng, Float rating, String reviews, Boolean liked, String address,
-                        LocalDate checkIn, LocalDate checkOut, Integer guests, Integer rooms,
-                        List<String> amenities, List<String> subImages, List<Room> roomsList,
-                        String accommodationType) {
+
+    public Hotel_Entity(String name, String destination, String description, BigDecimal price, String imageUrl, Double lat, Double lng, Float rating, String reviews, Boolean liked, String address, LocalDate checkIn, LocalDate checkOut, Integer guests, Integer rooms, String accommodationType, Integer version, List<String> amenities, List<String> subImages, List<Room> roomsList, List<User> likedByUsers, User user) {
         this.name = name;
         this.destination = destination;
         this.description = description;
@@ -117,21 +120,13 @@ public class Hotel_Entity {
         this.checkOut = checkOut;
         this.guests = guests;
         this.rooms = rooms;
+        this.accommodationType = accommodationType;
+        this.version = version;
         this.amenities = amenities;
         this.subImages = subImages;
         this.roomsList = roomsList;
-        this.accommodationType = accommodationType; // ✅ New field added here
-    }
-
-
-
-    // Getters and Setters
-    public Integer getHotelId() {
-        return hotelId;
-    }
-
-    public void setHotelId(Integer hotelId) {
-        this.hotelId = hotelId;
+        this.likedByUsers = likedByUsers;
+        this.user = user;
     }
 
     public String getName() {
@@ -254,28 +249,6 @@ public class Hotel_Entity {
         this.rooms = rooms;
     }
 
-    public List<String> getAmenities() {
-        return amenities;
-    }
-
-    public void setAmenities(List<String> amenities) {
-        this.amenities = amenities;
-    }
-    public List<String> getSubImages() {
-        return subImages;
-    }
-
-    public void setSubImages(List<String> subImages) {
-        this.subImages = subImages;
-    }
-
-    public List<Room> getRoomsList() {
-        return roomsList;
-    }
-
-    public void setRoomsList(List<Room> roomsList) {
-        this.roomsList = roomsList;
-    }
     public String getAccommodationType() {
         return accommodationType;
     }
@@ -292,11 +265,43 @@ public class Hotel_Entity {
         this.version = version;
     }
 
+    public List<String> getAmenities() {
+        return amenities;
+    }
+
+    public void setAmenities(List<String> amenities) {
+        this.amenities = amenities;
+    }
+
+    public List<String> getSubImages() {
+        return subImages;
+    }
+
+    public void setSubImages(List<String> subImages) {
+        this.subImages = subImages;
+    }
+
+    public List<Room> getRoomsList() {
+        return roomsList;
+    }
+
+    public void setRoomsList(List<Room> roomsList) {
+        this.roomsList = roomsList;
+    }
+
     public List<User> getLikedByUsers() {
         return likedByUsers;
     }
 
     public void setLikedByUsers(List<User> likedByUsers) {
         this.likedByUsers = likedByUsers;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

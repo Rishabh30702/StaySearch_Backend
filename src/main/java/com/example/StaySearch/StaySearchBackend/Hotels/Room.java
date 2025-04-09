@@ -20,15 +20,31 @@ public class Room {
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
+
     @ManyToOne
     @JoinColumn(name = "hotel_id", nullable = false)
     @JsonBackReference
     private Hotel_Entity hotel;
 
-    // Default Constructor
+    // ✅ Additional Fields (based on frontend payload)
+    @Column(name = "type")
+    private String type;
+
+    @Column(name = "price")
+    private double price;
+
+    @Column(name = "total")
+    private int total;
+
+    @Column(name = "available")
+    private int available;
+
+    @Column(name = "deal")
+    private boolean deal;
+
+    // Constructors
     public Room() {}
 
-    // Constructor
     public Room(String name, String description, String imageUrl, Hotel_Entity hotel) {
         this.name = name;
         this.description = description;
@@ -69,6 +85,7 @@ public class Room {
         this.imageUrl = imageUrl;
     }
 
+
     public Hotel_Entity getHotel() {
         return hotel;
     }
@@ -76,4 +93,45 @@ public class Room {
     public void setHotel(Hotel_Entity hotel) {
         this.hotel = hotel;
     }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
+
+    public int getAvailable() {
+        return available;
+    }
+
+    public void setAvailable(int available) {
+        this.available = available;
+    }
+
+    public boolean isDeal() {
+        return deal;
+    }
+
+    public void setDeal(boolean deal) {
+        this.deal = deal;
+    }
+
 }
