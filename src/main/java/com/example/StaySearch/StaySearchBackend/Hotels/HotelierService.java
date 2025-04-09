@@ -36,14 +36,18 @@ public class HotelierService {
         return roomRepo.findByHotel_HotelId(hotelId);
     }
 
-    public Room addRoom(Integer hotelId, Room room) {
+    public Room addRoom(Integer hotelId, Room room, MultipartFile file) throws IOException{
         Hotel_Entity hotel = hotelRepo.findById(hotelId)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with ID: " + hotelId));
 
+        try{
         // Set static image URL
-        String staticImageUrl = "https://images.unsplash.com/photo-1501117716987-c8e1ecb210d1?auto=format&fit=crop&w=800&q=80";
-        room.setImageUrl(staticImageUrl);
-
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+        String imageUrl = uploadResult.get("url").toString();  // Get the URL of the uploaded image;
+        room.setImageUrl(imageUrl);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload image", e);
+        }
         // Link room to the hotel
         room.setHotel(hotel);
         return roomRepo.save(room);
@@ -53,4 +57,39 @@ public class HotelierService {
     public Hotel_Entity createHotel(Hotel_Entity hotel) {
         return hotelRepo.save(hotel);
     }
+
+    public void deleteRoom(Long roomId) {
+        Room room = roomRepo.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found with ID: " + roomId));
+        roomRepo.delete(room);
+    }
+
+    public Room updateRoom(Long roomId, Room updatedRoom, MultipartFile imageFile) {
+        Room existingRoom = roomRepo.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found with ID: " + roomId));
+
+        // Update fields from form-data
+        existingRoom.setName(updatedRoom.getName());
+        existingRoom.setPrice(updatedRoom.getPrice());
+        existingRoom.setDescription(updatedRoom.getDescription());
+
+        // Optional business fields (you mentioned in the payload)
+        existingRoom.setAvailable(updatedRoom.getAvailable());
+        existingRoom.setTotal(updatedRoom.getTotal());
+        existingRoom.setDeal(updatedRoom.isDeal());
+
+        // Upload image if new one is provided
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                Map uploadResult = cloudinary.uploader().upload(imageFile.getBytes(), ObjectUtils.emptyMap());
+                String imageUrl = uploadResult.get("url").toString();
+                existingRoom.setImageUrl(imageUrl);
+            } catch (IOException e) {
+                throw new RuntimeException("Image upload failed", e);
+            }
+        }
+
+        return roomRepo.save(existingRoom);
+    }
+
 }

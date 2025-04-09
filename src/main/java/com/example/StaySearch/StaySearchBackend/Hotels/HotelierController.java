@@ -51,8 +51,9 @@ public class HotelierController {
 
     @PostMapping("/hotels/{hotelId}/rooms")
     public ResponseEntity<Room> addRoom(@PathVariable Integer hotelId,
-                                        @RequestPart("room") Room room) {
-        Room createdRoom = hotelierService.addRoom(hotelId, room);
+                                        @RequestPart("room") Room room,
+                                        @RequestParam("imageUrl") MultipartFile file) throws IOException {
+        Room createdRoom = hotelierService.addRoom(hotelId, room, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdRoom);
     }
 
@@ -65,6 +66,26 @@ public class HotelierController {
 
         Hotel_Entity savedHotel = hotelRepository.save(hotel);
         return ResponseEntity.ok(savedHotel);
+    }
+
+    @DeleteMapping("/rooms/{roomId}")
+    public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId) {
+        hotelierService.deleteRoom(roomId);
+        return ResponseEntity.noContent().build(); // 204 No Content
+    }
+
+    @PutMapping("/rooms/{roomId}")
+    public ResponseEntity<?> updateRoom(
+            @PathVariable Long roomId,
+            @RequestPart("room") Room updatedRoom,
+            @RequestPart(value = "imageUrl", required = false) MultipartFile imageFile) {
+
+        try {
+            Room room = hotelierService.updateRoom(roomId, updatedRoom, imageFile);
+            return new ResponseEntity<>(room, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
 }
