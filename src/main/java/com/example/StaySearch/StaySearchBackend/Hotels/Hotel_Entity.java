@@ -129,6 +129,14 @@ public class Hotel_Entity {
         this.user = user;
     }
 
+    public Integer getHotelId() {
+        return hotelId;
+    }
+
+    public void setHotelId(Integer hotelId) {
+        this.hotelId = hotelId;
+    }
+
     public String getName() {
         return name;
     }
