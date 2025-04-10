@@ -1,6 +1,7 @@
 package com.example.StaySearch.StaySearchBackend.JWT;
 
 import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Entity;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -47,17 +48,23 @@ public class User {
         this.hotels = hotels;
     }
 
+    @Column(name = "status", nullable = true)
+    private String status; // Only used for hoteliers
+
     public User() {
     }
 
 
-    public User(Long id, String username, String password, String role,String fullname, String phonenumber) {
+    public User(Long id, String username, String password, String role, String fullname, String phonenumber, List<Hotel_Entity> wishlist, List<Hotel_Entity> hotels, String status) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.role = role;
         this.fullname = fullname;
         this.phonenumber = phonenumber;
+        this.wishlist = wishlist;
+        this.hotels = hotels;
+        this.status = status;
     }
 
     public Long getId() {
@@ -107,11 +114,20 @@ public class User {
     public void setPhonenumber(String phonenumber) {
         this.phonenumber = phonenumber;
     }
+
     public List<Hotel_Entity> getWishlist() {
         return wishlist;
     }
 
     public void setWishlist(List<Hotel_Entity> wishlist) {
         this.wishlist = wishlist;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

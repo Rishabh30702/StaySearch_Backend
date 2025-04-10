@@ -8,10 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/auth")
@@ -218,5 +221,102 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Hotel not found in wishlist."));
         }
     }
+
+    //Trigger when the admin approved the hotelier
+    @PutMapping("/approve/hotelier/{userId}")
+    public ResponseEntity<Map<String, String>> approveHotelier(@PathVariable Long userId) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        Map<String, String> response = new HashMap<>();
+
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            if (!"Hotelier".equalsIgnoreCase(user.getRole())) {
+                response.put("message", "User is not a hotelier.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            user.setStatus("APPROVED");
+            userRepository.save(user);
+            userService.sendHotelierApprovalEmail(user);
+            response.put("message", "Hotelier approved successfully.");
+            return ResponseEntity.ok(response);
+        }
+
+        response.put("message", "User not found.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+
+    @PostMapping("/pending/{id}")
+    public ResponseEntity<Map<String, String>> makeHotelierPending(@PathVariable Long id) {
+        userService.updateStatus(id, "PENDING");
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Hotelier marked as pending successfully.");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reject/{id}")
+    public ResponseEntity<Map<String, String>> rejectHotelier(@PathVariable Long id) {
+        userService.updateStatus(id, "REJECTED");
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Hotelier rejected successfully.");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/pending/hoteliers")
+    public ResponseEntity<List<User>> getPendingHoteliers() {
+        List<User> pendingHoteliers = userRepository.findByRoleAndStatus("ROLE_HOTELIER", "PENDING");
+        return ResponseEntity.ok(pendingHoteliers);
+    }
+
+    @PostMapping("/login/hotelier")
+    public ResponseEntity<Map<String, Object>> loginHotelier(@RequestBody User userRequest) {
+        // Step 1: Fetch the user by username or email
+        Optional<User> optionalUser = userRepository.findByUsername(userRequest.getUsername());
+
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not found"));
+        }
+
+        User dbUser = optionalUser.get();
+
+        // Step 2: If role is Hotelier, check if status is APPROVED
+        if ("Hotelier".equalsIgnoreCase(dbUser.getRole()) &&
+                (dbUser.getStatus() == null || !"APPROVED".equalsIgnoreCase(dbUser.getStatus()))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Your hotelier account is pending admin approval."));
+        }
+
+        // Step 3: Authenticate credentials
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(userRequest.getUsername(), userRequest.getPassword()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid credentials"));
+        }
+
+        // Step 4: Generate JWT token
+        String token = jwtUtil.generateToken(userRequest.getUsername());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Login successful");
+        response.put("token", token);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/register/hotelier")
+    public ResponseEntity<?> registerHotelier(@RequestBody User user) {
+        try {
+            User registeredUser = userService.registerHotelier(user);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(Map.of("message", "Hotelier registered successfully. Awaiting admin approval.", "user", registeredUser));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error registering hotelier", "error", e.getMessage()));
+        }
+    }
+
 
 }
