@@ -1,5 +1,9 @@
 package com.example.StaySearch.StaySearchBackend.HotelFeedback;
 
+import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Entity;
+import com.example.StaySearch.StaySearchBackend.JWT.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,18 +38,32 @@ public class HotelFeedbackEntities {
         this.createdAt = LocalDateTime.now();
     }
 
+
+    @ManyToOne
+    @JoinColumn(name = "user_id") // ✅ this creates a real foreign key column in hotel_feedbacks
+    @JsonIgnoreProperties({"password", "roles", "authorities", "wishlist", "hotels"})
+    private User user;
+
+
+    @ManyToOne
+    @JoinColumn(name = "hotel_id")
+    @JsonIgnore
+    private Hotel_Entity hotel;
+
     // Constructors, getters, and setters
 
     public HotelFeedbackEntities() {
     }
 
-    public HotelFeedbackEntities(Long id, String hotelName, List<String> likedAmenities, int rating, String description, LocalDateTime createdAt) {
+    public HotelFeedbackEntities(Long id, String hotelName, List<String> likedAmenities, int rating, String description, LocalDateTime createdAt, User user, Hotel_Entity hotel) {
         this.id = id;
         this.hotelName = hotelName;
         this.likedAmenities = likedAmenities;
         this.rating = rating;
         this.description = description;
         this.createdAt = createdAt;
+        this.user = user;
+        this.hotel = hotel;
     }
 
     public Long getId() {
@@ -94,6 +112,22 @@ public class HotelFeedbackEntities {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Hotel_Entity getHotel() {
+        return hotel;
+    }
+
+    public void setHotel(Hotel_Entity hotel) {
+        this.hotel = hotel;
     }
 }
 
