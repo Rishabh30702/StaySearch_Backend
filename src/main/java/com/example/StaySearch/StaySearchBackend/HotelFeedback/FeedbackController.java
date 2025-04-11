@@ -42,4 +42,37 @@ public class FeedbackController {
         feedbackService.deleteFeedback(id);
         return ResponseEntity.ok("Feedback deleted successfully");
     }
+
+    @GetMapping("/my-feedbacks")
+    public ResponseEntity<List<HotelFeedbackEntities>> getMyFeedbacks(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7); // remove Bearer
+        return ResponseEntity.ok(feedbackService.getFeedbackByLoggedInUser(token));
+    }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<?> updateFeedback(
+            @PathVariable Long id,
+            @RequestBody HotelFeedbackEntities updatedFeedback,
+            @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        HotelFeedbackEntities result = feedbackService.updateMyFeedback(id, updatedFeedback, token);
+        if (result != null) {
+            return ResponseEntity.ok(result);
+        } else {
+            return ResponseEntity.status(403).body("Unauthorized to update this feedback");
+        }
+    }
+
+    @DeleteMapping("/my-feedback/delete/{id}")
+    public ResponseEntity<String> deleteMyFeedback(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        boolean deleted = feedbackService.deleteMyFeedback(id, token);
+        if (deleted) {
+            return ResponseEntity.ok("Feedback deleted successfully");
+        } else {
+            return ResponseEntity.status(403).body("Unauthorized to delete this feedback");
+        }
+    }
 }

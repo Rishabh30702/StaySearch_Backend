@@ -43,5 +43,50 @@ public class HotelFeedbackService {
     public void deleteFeedback(Long id) {
         feedbackRepository.deleteById(id);
     }
+
+
+    public List<HotelFeedbackEntities> getFeedbackByLoggedInUser(String token) {
+        String username = jwtUtil.extractUsername(token);
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        return userOpt.map(feedbackRepository::findByUser).orElse(List.of());
+    }
+
+    public HotelFeedbackEntities updateMyFeedback(Long feedbackId, HotelFeedbackEntities updatedFeedback, String token) {
+        String username = jwtUtil.extractUsername(token);
+        Optional<User> userOpt = userRepository.findByUsername(username);
+
+        if (userOpt.isPresent()) {
+            User currentUser = userOpt.get();
+            Optional<HotelFeedbackEntities> existingOpt = feedbackRepository.findById(feedbackId);
+
+            if (existingOpt.isPresent()) {
+                HotelFeedbackEntities existing = existingOpt.get();
+
+                if (existing.getUser().getId().equals(currentUser.getId())) {
+                    // Update allowed
+                    existing.setRating(updatedFeedback.getRating());
+                    existing.setDescription(updatedFeedback.getDescription());
+                    existing.setLikedAmenities(updatedFeedback.getLikedAmenities());
+                    return feedbackRepository.save(existing);
+                }
+            }
+        }
+        return null;
+    }
+
+    public boolean deleteMyFeedback(Long id, String token) {
+        String username = jwtUtil.extractUsername(token);
+        Optional<User> userOpt = userRepository.findByUsername(username);
+
+        if (userOpt.isPresent()) {
+            Optional<HotelFeedbackEntities> feedbackOpt = feedbackRepository.findById(id);
+            if (feedbackOpt.isPresent() && feedbackOpt.get().getUser().getId().equals(userOpt.get().getId())) {
+                feedbackRepository.deleteById(id);
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
 
