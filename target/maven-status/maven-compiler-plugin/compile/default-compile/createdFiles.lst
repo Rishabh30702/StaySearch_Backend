@@ -11,7 +11,6 @@ com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Entity.class
 com\example\StaySearch\StaySearchBackend\JWT\UserService.class
 com\example\StaySearch\StaySearchBackend\JWT\User.class
 com\example\StaySearch\StaySearchBackend\CloudinaryConfig\CloudinaryConfig.class
-com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Repository$HotelRepository.class
 com\example\StaySearch\StaySearchBackend\JWT\UserRepository.class
 com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Controller.class
 com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Repository.class

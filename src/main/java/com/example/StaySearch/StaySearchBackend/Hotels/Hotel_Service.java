@@ -2,9 +2,14 @@ package com.example.StaySearch.StaySearchBackend.Hotels;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.example.StaySearch.StaySearchBackend.JWT.User;
+import com.example.StaySearch.StaySearchBackend.JWT.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,6 +30,9 @@ public class Hotel_Service {
     private Hotel_Repository hotelRepository;
     @Autowired
     private Cloudinary cloudinary;
+
+    @Autowired
+    private UserRepository userRepository;
 
     private static final String UPLOAD_DIR = "uploads/";
 
@@ -159,5 +167,36 @@ public class Hotel_Service {
         } else {
             throw new RuntimeException("Image not found for hotel ID: " + hotelId);
         }
+    }
+
+    public String currentUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        System.out.println("📢 currentUsername() called → " + username);
+        return username;
+    }
+
+    @Transactional
+    public Hotel_Entity saveHotelForCurrentUser(Hotel_Entity hotel) {
+        User owner = userRepository.findByUsername(currentUsername())
+                .orElseThrow(() -> new UsernameNotFoundException(currentUsername()));
+
+        // Check if a hotel with the same name already exists for this user
+        Optional<Hotel_Entity> existingHotel = hotelRepository.findByUserAndName(owner, hotel.getName());
+        if (existingHotel.isPresent()) {
+            throw new RuntimeException("Hotel with this name already exists for this user.");
+        }
+
+        hotel.setUser(owner);  // Set the current user as the hotel owner
+
+        return hotelRepository.save(hotel);  // Save the hotel to the repository
+    }
+
+    /* NEW read‑my‑hotels */
+    @Transactional(readOnly = true)
+    public List<Hotel_Entity> getMyHotels() {
+        List<Hotel_Entity> hotels = hotelRepository.findByUserUsername(currentUsername());
+        System.out.println("Fetched Hotels: " + hotels.size());
+        return hotels;
     }
 }

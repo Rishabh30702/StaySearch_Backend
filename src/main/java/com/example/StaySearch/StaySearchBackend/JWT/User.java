@@ -36,7 +36,7 @@ public class User {
     )
     private List<Hotel_Entity> wishlist = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<Hotel_Entity> hotels = new ArrayList<>();
 

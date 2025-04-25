@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -106,6 +107,17 @@ public class Hotel_Controller {
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Image not found: " + e.getMessage());
         }
+    }
+
+    @PostMapping("/mine/hotels")
+    public ResponseEntity<Hotel_Entity> createForMe(@RequestBody Hotel_Entity dto) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(hotelService.saveHotelForCurrentUser(dto));
+    }
+
+    @GetMapping("/mine/hotels")
+    public List<Hotel_Entity> listMine() {
+        return hotelService.getMyHotels();
     }
 
 
