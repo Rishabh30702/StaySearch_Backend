@@ -109,15 +109,46 @@ public class Hotel_Service {
             }
             if (updatedHotel.getImageUrl() != null) {
                 existingHotel.setImageUrl(updatedHotel.getImageUrl());
-            }if (updatedHotel.getAmenities() != null) {
+            }
+            if (updatedHotel.getAmenities() != null) {
                 existingHotel.setAmenities(updatedHotel.getAmenities());
             }
+            if (updatedHotel.getRoomsList() != null) {
+                // Clear the existing rooms if you're replacing them
+                existingHotel.getRoomsList().clear();
+
+                // Loop through incoming rooms and bind them to this hotel
+                for (Room room : updatedHotel.getRoomsList()) {
+                    room.setHotel(existingHotel); // important!
+                    existingHotel.getRoomsList().add(room);
+                }
+            }
+            if (updatedHotel.getAccommodationType() != null) {
+                existingHotel.setAccommodationType(updatedHotel.getAccommodationType());
+            }
+            if (updatedHotel.getSubImages() != null) {
+                existingHotel.setSubImages(updatedHotel.getSubImages());
+            }
+//            if (updatedHotel.getImageUrl() != null) {
+//                existingHotel.setImageUrl(updatedHotel.getImageUrl());
+//            }
+
+            // Optional (only if needed and properly secured)
+        /*
+        if (updatedHotel.getLikedByUsers() != null) {
+            existingHotel.setLikedByUsers(updatedHotel.getLikedByUsers());
+        }
+        if (updatedHotel.getUser() != null) {
+            existingHotel.setUser(updatedHotel.getUser());
+        }
+        */
 
             return hotelRepository.save(existingHotel);
         } else {
             throw new RuntimeException("Hotel not found with ID: " + hotelId);
         }
     }
+
 
     //This is the function to delete the record according to the hotel Id
     public void deleteById(Integer hotelId) {
