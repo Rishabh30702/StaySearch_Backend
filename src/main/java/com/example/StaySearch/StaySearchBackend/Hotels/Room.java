@@ -20,13 +20,11 @@ public class Room {
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
-
     @ManyToOne
     @JoinColumn(name = "hotel_id", nullable = false)
     @JsonBackReference
     private Hotel_Entity hotel;
 
-    // ✅ Additional Fields (based on frontend payload)
     @Column(name = "type")
     private String type;
 
@@ -42,7 +40,10 @@ public class Room {
     @Column(name = "deal")
     private boolean deal;
 
-    // Constructors
+    // ✅ Add transient hotelId for DTO-style creation
+    @Transient
+    private Integer hotelId;
+
     public Room() {}
 
     public Room(String name, String description, String imageUrl, Hotel_Entity hotel) {
@@ -53,6 +54,7 @@ public class Room {
     }
 
     // Getters and Setters
+
     public Long getId() {
         return id;
     }
@@ -84,7 +86,6 @@ public class Room {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
-
 
     public Hotel_Entity getHotel() {
         return hotel;
@@ -134,4 +135,11 @@ public class Room {
         this.deal = deal;
     }
 
+    public Integer getHotelId() {
+        return hotelId;
+    }
+
+    public void setHotelId(Integer hotelId) {
+        this.hotelId = hotelId;
+    }
 }

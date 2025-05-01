@@ -34,6 +34,9 @@ public class Hotel_Service {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private  RoomRepository roomRepository;
+
     private static final String UPLOAD_DIR = "uploads/";
 
     //This is the function to fetch out all the hotel lists
@@ -230,4 +233,41 @@ public class Hotel_Service {
         System.out.println("Fetched Hotels: " + hotels.size());
         return hotels;
     }
+
+    @Transactional(readOnly = true)
+    public List<Room> getMyRooms() {
+        String username = getCurrentUsername(); // Replace with your actual username fetch method
+        List<Room> rooms = roomRepository.findByHotelUserUsername(username);
+        System.out.println("Fetched Rooms: " + rooms.size());
+        return rooms;
+    }
+
+    private String getCurrentUsername() {
+        // Example: If you're using Spring Security
+        return org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+    }
+
+    @Transactional
+    public Room addRoomForUser(Room request) {
+        String username = getCurrentUsername();
+
+        Hotel_Entity hotel = hotelRepository.findById(request.getHotelId())
+                .filter(h -> h.getUser().getUsername().equals(username))
+                .orElseThrow(() -> new RuntimeException("Hotel not found or does not belong to user"));
+
+        Room room = new Room();
+        room.setName(request.getName());
+        room.setDescription(request.getDescription());
+        room.setImageUrl(request.getImageUrl());
+        room.setType(request.getType());
+        room.setPrice(request.getPrice());
+        room.setTotal(request.getTotal());
+        room.setAvailable(request.getAvailable());
+        room.setDeal(request.isDeal());
+        room.setHotel(hotel);
+
+        return roomRepository.save(room);
+    }
+
 }

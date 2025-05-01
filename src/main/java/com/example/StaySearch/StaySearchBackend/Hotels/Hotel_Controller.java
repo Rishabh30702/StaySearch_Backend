@@ -20,6 +20,7 @@ public class Hotel_Controller {
     @Autowired
     private Hotel_Service hotelService;
 
+
     //Function to fetch all the hotels
     @GetMapping("/hotels")
     private ResponseEntity<?> getAllHotels() {
@@ -118,6 +119,16 @@ public class Hotel_Controller {
     @GetMapping("/mine/hotels")
     public List<Hotel_Entity> listMine() {
         return hotelService.getMyHotels();
+    }
+
+    @GetMapping("/mine/rooms")
+    public List<Room> listMyRooms() {
+        return hotelService.getMyRooms();
+    }
+
+    @PostMapping("/mine/rooms")
+    public Room addRoomForCurrentUser(@RequestBody Room roomRequest) {
+        return hotelService.addRoomForUser(roomRequest);
     }
 
 
