@@ -1,5 +1,6 @@
 package com.example.StaySearch.StaySearchBackend.Hotels;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -7,6 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.util.List;
@@ -126,10 +129,18 @@ public class Hotel_Controller {
         return hotelService.getMyRooms();
     }
 
-    @PostMapping("/mine/rooms")
-    public Room addRoomForCurrentUser(@RequestBody Room roomRequest) {
-        return hotelService.addRoomForUser(roomRequest);
+    @PostMapping(value = "/mine/rooms", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Room addRoomForCurrentUser(
+            @RequestPart("room") String roomJson,
+            @RequestPart("file") MultipartFile file) throws IOException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        Room roomRequest = mapper.readValue(roomJson, Room.class);
+
+        return hotelService.addRoomForUser(roomRequest, file);
     }
+
+
 
 
 }

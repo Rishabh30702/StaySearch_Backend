@@ -249,7 +249,7 @@ public class Hotel_Service {
     }
 
     @Transactional
-    public Room addRoomForUser(Room request) {
+    public Room addRoomForUser(Room request, MultipartFile file) throws IOException {
         String username = getCurrentUsername();
 
         Hotel_Entity hotel = hotelRepository.findById(request.getHotelId())
@@ -259,7 +259,6 @@ public class Hotel_Service {
         Room room = new Room();
         room.setName(request.getName());
         room.setDescription(request.getDescription());
-        room.setImageUrl(request.getImageUrl());
         room.setType(request.getType());
         room.setPrice(request.getPrice());
         room.setTotal(request.getTotal());
@@ -267,7 +266,15 @@ public class Hotel_Service {
         room.setDeal(request.isDeal());
         room.setHotel(hotel);
 
+        // Upload image to Cloudinary
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+        String imageUrl = uploadResult.get("url").toString();  // Get the URL of the uploaded image
+
+        // Save the image URL
+        room.setImageUrl(imageUrl);
+
         return roomRepository.save(room);
     }
+
 
 }
