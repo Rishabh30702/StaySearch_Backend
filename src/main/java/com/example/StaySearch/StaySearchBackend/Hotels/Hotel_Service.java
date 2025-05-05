@@ -2,6 +2,7 @@ package com.example.StaySearch.StaySearchBackend.Hotels;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.example.StaySearch.StaySearchBackend.Exception.ResourceNotFoundException;
 import com.example.StaySearch.StaySearchBackend.JWT.User;
 import com.example.StaySearch.StaySearchBackend.JWT.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,9 +51,11 @@ public class Hotel_Service {
     }
 
     ///Function to get the hotel by hotel id
-    public Optional<Hotel_Entity> getById(int hotelId) {
-        return hotelRepository.findById(hotelId);
+    public Hotel_Entity getById(int hotelId) {
+        return hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: " + hotelId));
     }
+
 
     //Function to find the hotel by the hotel name
     public Hotel_Entity getHotelByName(String hotel_name) {
