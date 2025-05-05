@@ -1,6 +1,9 @@
 package com.example.StaySearch.StaySearchBackend.Hotels;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.antlr.v4.runtime.misc.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -12,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.http.MediaType;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +27,12 @@ public class Hotel_Controller {
 
     @Autowired
     private Hotel_Service hotelService;
+
+    @Autowired
+    private Cloudinary cloudinary;
+
+    @Autowired
+    private ObjectMapper objectMapper; // Inject the configured ObjectMapper
 
 
     //Function to fetch all the hotels
@@ -118,6 +129,39 @@ public class Hotel_Controller {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(hotelService.saveHotelForCurrentUser(dto));
     }
+
+    @PostMapping(value = "/mine/hotels", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Hotel_Entity> createForMe(
+            @RequestPart("hotel") @NotNull String hotelJson,
+            @RequestPart("imageUrl") MultipartFile coverImage,
+            @RequestPart(value = "subImages", required = false) List<MultipartFile> subImages
+    ) throws IOException {
+
+        // Convert JSON to Hotel_Entity object using the injected ObjectMapper
+        Hotel_Entity hotel = objectMapper.readValue(hotelJson, Hotel_Entity.class);
+
+        // Upload cover image to Cloudinary
+        Map coverResult = cloudinary.uploader().upload(coverImage.getBytes(), ObjectUtils.emptyMap());
+        String coverUrl = coverResult.get("url").toString();
+        hotel.setImageUrl(coverUrl); // Set the cover image URL
+
+        // Upload subimages to Cloudinary, only if present
+        List<String> subImageUrls = new ArrayList<>();
+        if (subImages != null) {
+            for (MultipartFile subImage : subImages) {
+                Map uploadResult = cloudinary.uploader().upload(subImage.getBytes(), ObjectUtils.emptyMap());
+                subImageUrls.add(uploadResult.get("url").toString());
+            }
+        }
+        hotel.setSubImages(subImageUrls);  // Set the subimage URLs (could be empty)
+
+        // Save hotel with the user information (handled by service)
+        Hotel_Entity savedHotel = hotelService.saveHotelForCurrentUser(hotel);
+
+        // Return the created hotel entity as the response
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedHotel);
+    }
+
 
     @GetMapping("/mine/hotels")
     public List<Hotel_Entity> listMine() {

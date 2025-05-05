@@ -18,6 +18,7 @@ com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Controller.class
 com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Repository.class
 com\example\StaySearch\StaySearchBackend\HotelFeedback\HotelFeedbackEntities.class
 com\example\StaySearch\StaySearchBackend\HotelFeedback\FeedbackRepository.class
+com\example\StaySearch\StaySearchBackend\JacksonConfig\JacksonConfig.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Service.class
 com\example\StaySearch\StaySearchBackend\Hotels\HotelierController.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Controller.class

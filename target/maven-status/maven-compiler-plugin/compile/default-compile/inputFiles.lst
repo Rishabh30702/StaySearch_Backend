@@ -17,6 +17,7 @@ D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\Sta
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\Room.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\RoomRepository.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\RoomRequset.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JacksonConfig\JacksonConfig.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\AuthController.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\CustomUserDetailsService.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\EmailService.java

@@ -11,4 +11,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     List<Room> findByHotel_HotelId(Integer hotelId);
 
     List<Room> findByHotelUserUsername(String username);
+
+    List<Room> findByHotel_HotelId(int hotelId);
+
 }

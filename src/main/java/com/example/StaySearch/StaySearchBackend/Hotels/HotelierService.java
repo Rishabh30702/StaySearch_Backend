@@ -92,4 +92,9 @@ public class HotelierService {
         return roomRepo.save(existingRoom);
     }
 
+    // Method to get rooms by hotel ID
+    public List<Room> getRoomsByHotelId(int hotelId) {
+        return roomRepo.findByHotel_HotelId(hotelId); // Adjust based on your database query
+    }
+
 }

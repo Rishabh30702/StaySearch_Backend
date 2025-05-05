@@ -2,6 +2,7 @@ package com.example.StaySearch.StaySearchBackend.Hotels;
 
 import com.example.StaySearch.StaySearchBackend.JWT.User;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
@@ -54,9 +55,11 @@ public class Hotel_Entity {
     private String address;
 
     @Column(name = "check_in")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate checkIn;
 
     @Column(name = "check_out")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate checkOut;
 
     @Column(name = "guests")

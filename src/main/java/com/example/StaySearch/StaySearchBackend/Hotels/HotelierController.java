@@ -88,4 +88,13 @@ public class HotelierController {
         }
     }
 
+    @GetMapping("/hotel/{hotelId}")
+    public ResponseEntity<List<Room>> getRoomsByHotelId(@PathVariable int hotelId) {
+        List<Room> rooms = hotelierService.getRoomsByHotelId(hotelId);
+        if (rooms.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT); // No rooms found
+        }
+        return new ResponseEntity<>(rooms, HttpStatus.OK); // Return rooms if found
+    }
+
 }

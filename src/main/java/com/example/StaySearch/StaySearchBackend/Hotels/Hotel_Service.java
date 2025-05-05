@@ -212,6 +212,7 @@ public class Hotel_Service {
 
     @Transactional
     public Hotel_Entity saveHotelForCurrentUser(Hotel_Entity hotel) {
+        // Fetch the user from the repository
         User owner = userRepository.findByUsername(currentUsername())
                 .orElseThrow(() -> new UsernameNotFoundException(currentUsername()));
 
@@ -225,6 +226,7 @@ public class Hotel_Service {
 
         return hotelRepository.save(hotel);  // Save the hotel to the repository
     }
+
 
     /* NEW read‑my‑hotels */
     @Transactional(readOnly = true)
