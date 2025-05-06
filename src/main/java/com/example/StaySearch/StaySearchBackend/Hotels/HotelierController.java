@@ -3,6 +3,7 @@ package com.example.StaySearch.StaySearchBackend.Hotels;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.StaySearch.StaySearchBackend.CloudinaryConfig.CloudinaryService;
+import com.example.StaySearch.StaySearchBackend.Exception.ResourceNotFoundException;
 import com.example.StaySearch.StaySearchBackend.JWT.User;
 import com.example.StaySearch.StaySearchBackend.JWT.UserRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -74,18 +75,52 @@ public class HotelierController {
         return ResponseEntity.noContent().build(); // 204 No Content
     }
 
+    //to update the content of the rooms
     @PutMapping("/rooms/{roomId}")
     public ResponseEntity<?> updateRoom(
             @PathVariable Long roomId,
-            @RequestPart("room") Room updatedRoom,
-            @RequestPart(value = "imageUrl", required = false) MultipartFile imageFile) {
+            @RequestBody Room updatedRoom)
+          {
 
         try {
-            Room room = hotelierService.updateRoom(roomId, updatedRoom, imageFile);
+            Room room = hotelierService.updateRoom(roomId, updatedRoom);
             return new ResponseEntity<>(room, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+//TO update the image of the room
+    @PutMapping("/rooms/image/{roomId}")
+    public ResponseEntity<String> updateRoomImage(
+            @PathVariable Long roomId,
+            @RequestParam("imageUrl") MultipartFile newImage) throws IOException {
+
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
+
+        // Delete old image from Cloudinary if it exists
+        String oldImageUrl = room.getImageUrl();
+        if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+            String publicId = extractPublicIdFromUrl(oldImageUrl);
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        }
+
+        // Upload new image
+        Map uploadResult = cloudinary.uploader().upload(newImage.getBytes(), ObjectUtils.emptyMap());
+        String newImageUrl = uploadResult.get("url").toString();
+
+        // Update room with new image URL
+        room.setImageUrl(newImageUrl);
+        roomRepository.save(room);
+
+        return ResponseEntity.ok("Room image updated successfully.");
+    }
+
+
+    private String extractPublicIdFromUrl(String imageUrl) {
+        String[] parts = imageUrl.split("/");
+        String filenameWithExtension = parts[parts.length - 1]; // gajcesecn8wl4clxu8tk.jpg
+        return filenameWithExtension.split("\\.")[0];           // gajcesecn8wl4clxu8tk
     }
 
     @GetMapping("/hotel/{hotelId}")

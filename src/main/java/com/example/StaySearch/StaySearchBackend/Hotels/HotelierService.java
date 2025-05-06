@@ -64,7 +64,7 @@ public class HotelierService {
         roomRepo.delete(room);
     }
 
-    public Room updateRoom(Long roomId, Room updatedRoom, MultipartFile imageFile) {
+    public Room updateRoom(Long roomId, Room updatedRoom) {
         Room existingRoom = roomRepo.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found with ID: " + roomId));
 
@@ -78,16 +78,6 @@ public class HotelierService {
         existingRoom.setTotal(updatedRoom.getTotal());
         existingRoom.setDeal(updatedRoom.isDeal());
 
-        // Upload image if new one is provided
-        if (imageFile != null && !imageFile.isEmpty()) {
-            try {
-                Map uploadResult = cloudinary.uploader().upload(imageFile.getBytes(), ObjectUtils.emptyMap());
-                String imageUrl = uploadResult.get("url").toString();
-                existingRoom.setImageUrl(imageUrl);
-            } catch (IOException e) {
-                throw new RuntimeException("Image upload failed", e);
-            }
-        }
 
         return roomRepo.save(existingRoom);
     }
