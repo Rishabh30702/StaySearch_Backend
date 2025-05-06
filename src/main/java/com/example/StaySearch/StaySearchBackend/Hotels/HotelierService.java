@@ -64,23 +64,26 @@ public class HotelierService {
         roomRepo.delete(room);
     }
 
-    public Room updateRoom(Long roomId, Room updatedRoom) {
+    public Room updateRoom(Long roomId, Long hotelId, String name, int available,
+                           int total, Double price, Boolean deal,
+                           String description) {
+
+        // Find the existing room in the repository
         Room existingRoom = roomRepo.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found with ID: " + roomId));
 
-        // Update fields from form-data
-        existingRoom.setName(updatedRoom.getName());
-        existingRoom.setPrice(updatedRoom.getPrice());
-        existingRoom.setDescription(updatedRoom.getDescription());
+        // Update room fields with the new data
+        existingRoom.setName(name);
+        existingRoom.setAvailable(available); // Assuming available is a string in frontend
+        existingRoom.setTotal(total);
+        existingRoom.setPrice(price);
+        existingRoom.setDeal(deal != null ? deal : false); // Default to false if deal is not provided
+        existingRoom.setDescription(description != null ? description : ""); // Default to empty string if description is null
 
-        // Optional business fields (you mentioned in the payload)
-        existingRoom.setAvailable(updatedRoom.getAvailable());
-        existingRoom.setTotal(updatedRoom.getTotal());
-        existingRoom.setDeal(updatedRoom.isDeal());
-
-
+        // Save the updated room to the database
         return roomRepo.save(existingRoom);
     }
+
 
     // Method to get rooms by hotel ID
     public List<Room> getRoomsByHotelId(int hotelId) {

@@ -58,7 +58,7 @@ public class HotelierController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdRoom);
     }
 
-   @PostMapping("/hotels")
+    @PostMapping("/hotels")
     public ResponseEntity<Hotel_Entity> addHotel(@RequestBody Hotel_Entity hotel) {
         User hotelier = userRepository.findByUsername("hotelier@example.com")
                 .orElseThrow(() -> new RuntimeException("Hotelier not found"));
@@ -77,19 +77,28 @@ public class HotelierController {
 
     //to update the content of the rooms
     @PutMapping("/rooms/{roomId}")
-    public ResponseEntity<?> updateRoom(
+    public ResponseEntity<?> updateRoomWithFile(
             @PathVariable Long roomId,
-            @RequestBody Room updatedRoom)
-          {
+            @RequestParam("hotelId") Long hotelId,
+            @RequestParam("name") String name,
+            @RequestParam("available") int available,
+            @RequestParam("total") int total,
+            @RequestParam("price") double price,
+            @RequestParam(value = "deal", required = false) Boolean deal,
+            @RequestParam(value = "description", required = false) String description
+            ) {
 
         try {
-            Room room = hotelierService.updateRoom(roomId, updatedRoom);
-            return new ResponseEntity<>(room, HttpStatus.OK);
+            Room updatedRoom = hotelierService.updateRoom(roomId, hotelId, name, available, total, price, deal, description);
+            return new ResponseEntity<>(updatedRoom, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
-//TO update the image of the room
+
+
+
+    //TO update the image of the room
     @PutMapping("/rooms/image/{roomId}")
     public ResponseEntity<String> updateRoomImage(
             @PathVariable Long roomId,
