@@ -46,4 +46,14 @@ public class OfferController {
     public void deleteOffer(@PathVariable Long id) {
         offerService.deleteOffer(id);
     }
+
+    @PutMapping("/{id}/status")
+    public OfferEntity updateOfferStatus(@PathVariable Long id, @RequestParam OfferStatus status) {
+        return offerService.updateOfferStatus(id, status);
+    }
+
+    @GetMapping("/status/{status}")
+    public List<OfferEntity> getOffersByStatus(@PathVariable OfferStatus status) {
+        return offerService.getOffersByStatus(status);
+    }
 }

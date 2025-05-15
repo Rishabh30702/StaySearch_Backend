@@ -12,7 +12,8 @@ public class SchedulerConfig {
     @Autowired
     private OfferService offerService;
 
-    @Scheduled(cron = "0 0 * * * *")
+//    @Scheduled(cron = "0 0 * * * *")
+@Scheduled(fixedRate = 30000)
     public void deleteExpiredOffers() {
         offerService.deleteExpiredOffers();
     }

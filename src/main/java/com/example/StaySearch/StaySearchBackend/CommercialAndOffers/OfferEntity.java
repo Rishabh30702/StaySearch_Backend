@@ -19,10 +19,16 @@ public class OfferEntity {
 
     @Column(name = "valid_from", columnDefinition = "datetime")
     private LocalDateTime validFrom;
+
     @Column(name = "valid_till", columnDefinition = "datetime")
     private LocalDateTime validTill;
 
-    public OfferEntity(Long id, String title, String description, String badge, String image, LocalDateTime validFrom, LocalDateTime validTill) {
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OfferStatus status = OfferStatus.PENDING; // Default value
+
+    public OfferEntity(Long id, String title, String description, String badge, String image,
+                       LocalDateTime validFrom, LocalDateTime validTill, OfferStatus status) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -30,10 +36,13 @@ public class OfferEntity {
         this.image = image;
         this.validFrom = validFrom;
         this.validTill = validTill;
+        this.status = status;
     }
 
     public OfferEntity() {
     }
+
+    // --- Getters and Setters ---
 
     public Long getId() {
         return id;
@@ -90,4 +99,13 @@ public class OfferEntity {
     public void setValidTill(LocalDateTime validTill) {
         this.validTill = validTill;
     }
+
+    public OfferStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OfferStatus status) {
+        this.status = status;
+    }
 }
+
