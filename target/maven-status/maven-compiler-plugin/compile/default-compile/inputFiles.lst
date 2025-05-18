@@ -34,4 +34,13 @@ D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\Sta
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\User.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\UserRepository.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\UserService.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\HomepageBanner.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\HomepageBannerController.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\HomepageBannerRepository.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\InformationalPage.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\InformationalPageController.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\InformationalPageRepository.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\PromotionalMaterial.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\PromotionalMaterialController.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\PromotionalMaterialRepository.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\StaySearchBackendApplication.java
