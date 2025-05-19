@@ -55,17 +55,52 @@ public class AuthController {
         return response;
     }
 
-    @PostMapping("/login")
-    public Map<String, Object> login(@RequestBody User user) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
+//    @PostMapping("/login")
+//    public Map<String, Object> login(@RequestBody User user) {
+//        authenticationManager.authenticate(
+//                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
+//
+//        String token = jwtUtil.generateToken(user.getUsername());
+//        Map<String, Object> response = new HashMap<>();
+//        response.put("message", "Login successful");
+//        response.put("token", token);
+//        return response;
+//    }
 
-        String token = jwtUtil.generateToken(user.getUsername());
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(@RequestBody User userRequest) {
+        Optional<User> optionalUser = userRepository.findByUsername(userRequest.getUsername());
+
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not found"));
+        }
+
+        User dbUser = optionalUser.get();
+
+        // Only allow users with role USER to login here
+        if (!"USER".equalsIgnoreCase(dbUser.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Access denied: unauthorized role"));
+        }
+
+        // Authenticate credentials
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(userRequest.getUsername(), userRequest.getPassword()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid credentials"));
+        }
+
+        String token = jwtUtil.generateToken(userRequest.getUsername());
+
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Login successful");
         response.put("token", token);
-        return response;
+        return ResponseEntity.ok(response);
     }
+
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUserDetails() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -269,9 +304,45 @@ public class AuthController {
         return ResponseEntity.ok(pendingHoteliers);
     }
 
+//    @PostMapping("/login/hotelier")
+//    public ResponseEntity<Map<String, Object>> loginHotelier(@RequestBody User userRequest) {
+//        // Step 1: Fetch the user by username or email
+//        Optional<User> optionalUser = userRepository.findByUsername(userRequest.getUsername());
+//
+//        if (optionalUser.isEmpty()) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//                    .body(Map.of("message", "User not found"));
+//        }
+//
+//        User dbUser = optionalUser.get();
+//
+//        // Step 2: If role is Hotelier, check if status is APPROVED
+//        if ("Hotelier".equalsIgnoreCase(dbUser.getRole()) &&
+//                (dbUser.getStatus() == null || !"APPROVED".equalsIgnoreCase(dbUser.getStatus()))) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body(Map.of("message", "Your hotelier account is pending admin approval."));
+//        }
+//
+//        // Step 3: Authenticate credentials
+//        try {
+//            authenticationManager.authenticate(
+//                    new UsernamePasswordAuthenticationToken(userRequest.getUsername(), userRequest.getPassword()));
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//                    .body(Map.of("message", "Invalid credentials"));
+//        }
+//
+//        // Step 4: Generate JWT token
+//        String token = jwtUtil.generateToken(userRequest.getUsername());
+//
+//        Map<String, Object> response = new HashMap<>();
+//        response.put("message", "Login successful");
+//        response.put("token", token);
+//        return ResponseEntity.ok(response);
+//    }
+
     @PostMapping("/login/hotelier")
     public ResponseEntity<Map<String, Object>> loginHotelier(@RequestBody User userRequest) {
-        // Step 1: Fetch the user by username or email
         Optional<User> optionalUser = userRepository.findByUsername(userRequest.getUsername());
 
         if (optionalUser.isEmpty()) {
@@ -281,14 +352,17 @@ public class AuthController {
 
         User dbUser = optionalUser.get();
 
-        // Step 2: If role is Hotelier, check if status is APPROVED
-        if ("Hotelier".equalsIgnoreCase(dbUser.getRole()) &&
-                (dbUser.getStatus() == null || !"APPROVED".equalsIgnoreCase(dbUser.getStatus()))) {
+        // Explicitly reject if role is not "Hotelier"
+        if (!"Hotelier".equalsIgnoreCase(dbUser.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Access denied: not a hotelier account"));
+        }
+
+        if (dbUser.getStatus() == null || !"APPROVED".equalsIgnoreCase(dbUser.getStatus())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Your hotelier account is pending admin approval."));
         }
 
-        // Step 3: Authenticate credentials
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(userRequest.getUsername(), userRequest.getPassword()));
@@ -297,7 +371,6 @@ public class AuthController {
                     .body(Map.of("message", "Invalid credentials"));
         }
 
-        // Step 4: Generate JWT token
         String token = jwtUtil.generateToken(userRequest.getUsername());
 
         Map<String, Object> response = new HashMap<>();
@@ -305,6 +378,7 @@ public class AuthController {
         response.put("token", token);
         return ResponseEntity.ok(response);
     }
+
 
     @PostMapping("/register/hotelier")
     public ResponseEntity<?> registerHotelier(@RequestBody User user) {
@@ -316,6 +390,63 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Error registering hotelier", "error", e.getMessage()));
         }
+    }
+
+    @PostMapping("/register/admin")
+    public ResponseEntity<?> registerAdmin(@RequestBody User userRequest) {
+        try {
+            // Check if username already exists
+            Optional<User> existingUser = userRepository.findByUsername(userRequest.getUsername());
+            if (existingUser.isPresent()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("message", "Username already exists"));
+            }
+
+            // Set admin-specific fields
+            userRequest.setPassword(passwordEncoder.encode(userRequest.getPassword()));
+            userRequest.setRole("ADMIN"); // or "ROLE_ADMIN" if using Spring Security roles
+            userRequest.setStatus("APPROVED");
+
+            User savedAdmin = userRepository.save(userRequest);
+
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(Map.of("message", "Admin registered successfully", "user", savedAdmin));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error registering admin", "error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/login/admin")
+    public ResponseEntity<Map<String, Object>> loginAdmin(@RequestBody User userRequest) {
+        Optional<User> optionalUser = userRepository.findByUsername(userRequest.getUsername());
+
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not found"));
+        }
+
+        User dbUser = optionalUser.get();
+
+        if (!"ADMIN".equalsIgnoreCase(dbUser.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Access denied: not an admin account"));
+        }
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(userRequest.getUsername(), userRequest.getPassword()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid credentials"));
+        }
+
+        String token = jwtUtil.generateToken(userRequest.getUsername());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Admin login successful");
+        response.put("token", token);
+        return ResponseEntity.ok(response);
     }
 
 
