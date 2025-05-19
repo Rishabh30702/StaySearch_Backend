@@ -26,22 +26,15 @@ public class HomepageBannerController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<HomepageBanner> createBanner(
             @RequestParam String title,
-            @RequestParam("images") MultipartFile[] images
+            @RequestParam MultipartFile image
     ) throws IOException {
 
-        if (images.length != 2) {
-            return ResponseEntity.badRequest().body(null); // Or throw a custom exception
-        }
-
-        String imageUrl1 = cloudinary.uploader().upload(images[0].getBytes(), ObjectUtils.emptyMap())
-                .get("url").toString();
-        String imageUrl2 = cloudinary.uploader().upload(images[1].getBytes(), ObjectUtils.emptyMap())
+        String imageUrl = cloudinary.uploader().upload(image.getBytes(), ObjectUtils.emptyMap())
                 .get("url").toString();
 
         HomepageBanner banner = new HomepageBanner();
         banner.setTitle(title);
-        banner.setImageUrl1(imageUrl1);  // Make sure your entity has these two fields
-        banner.setImageUrl2(imageUrl2);
+        banner.setImageUrl(imageUrl);
 
         return ResponseEntity.ok(repository.save(banner));
     }
@@ -55,7 +48,7 @@ public class HomepageBannerController {
     public ResponseEntity<HomepageBanner> updateBanner(
             @PathVariable Long id,
             @RequestParam String title,
-            @RequestParam(name = "images", required = false) MultipartFile[] images
+            @RequestParam(required = false) MultipartFile image
     ) throws IOException {
         Optional<HomepageBanner> optional = repository.findById(id);
         if (optional.isEmpty()) {
@@ -65,25 +58,11 @@ public class HomepageBannerController {
         HomepageBanner banner = optional.get();
         banner.setTitle(title);
 
-        if (images != null) {
-            if (images.length > 2) {
-                return ResponseEntity.badRequest().build(); // Reject more than 2 images
-            }
-
-            if (images.length >= 1 && images[0] != null && !images[0].isEmpty()) {
-                String imageUrl1 = cloudinary.uploader().upload(images[0].getBytes(), ObjectUtils.emptyMap())
-                        .get("url").toString();
-                banner.setImageUrl1(imageUrl1);
-            }
-
-            if (images.length == 2 && images[1] != null && !images[1].isEmpty()) {
-                String imageUrl2 = cloudinary.uploader().upload(images[1].getBytes(), ObjectUtils.emptyMap())
-                        .get("url").toString();
-                banner.setImageUrl2(imageUrl2);
-            }
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = cloudinary.uploader().upload(image.getBytes(), ObjectUtils.emptyMap()).get("url").toString();
+            banner.setImageUrl(imageUrl);
         }
 
         return ResponseEntity.ok(repository.save(banner));
     }
-
 }
