@@ -20,14 +20,25 @@ public class HotelFeedbackService {
     @Autowired
     private JwtUtil jwtUtil;
 
+//    public HotelFeedbackEntities saveFeedback(HotelFeedbackEntities feedback, String token) {
+//        String username = jwtUtil.extractUsername(token);
+//        Optional<User> userOpt = userRepository.findByUsername(username); // Use findByUsername or findByEmail
+//        if (userOpt.isPresent()) {
+//            feedback.setUser(userOpt.get()); // ✅ associate logged-in user
+//        }
+//        return feedbackRepository.save(feedback);
+//    }
+
     public HotelFeedbackEntities saveFeedback(HotelFeedbackEntities feedback, String token) {
         String username = jwtUtil.extractUsername(token);
         Optional<User> userOpt = userRepository.findByUsername(username); // Use findByUsername or findByEmail
-        if (userOpt.isPresent()) {
-            feedback.setUser(userOpt.get()); // ✅ associate logged-in user
-        }
+        userOpt.ifPresent(feedback::setUser);
+
+        feedback.setStatus(FeedbackStatus.PENDING); // ✅ set initial status
+
         return feedbackRepository.save(feedback);
     }
+
 
     public List<HotelFeedbackEntities> getAllFeedbacks() {
         return feedbackRepository.findAll();

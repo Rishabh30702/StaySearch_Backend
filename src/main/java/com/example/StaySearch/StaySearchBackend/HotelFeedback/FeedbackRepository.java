@@ -13,5 +13,7 @@ public interface FeedbackRepository extends JpaRepository<HotelFeedbackEntities,
 
     List<HotelFeedbackEntities> findByUser(User user);
 
+    List<HotelFeedbackEntities> findByStatus(FeedbackStatus status);
+
 
 }

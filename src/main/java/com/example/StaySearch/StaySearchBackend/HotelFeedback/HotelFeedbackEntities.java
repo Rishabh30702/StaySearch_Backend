@@ -50,12 +50,15 @@ public class HotelFeedbackEntities {
     @JsonIgnore
     private Hotel_Entity hotel;
 
+    @Enumerated(EnumType.STRING)
+    private FeedbackStatus status;
+
     // Constructors, getters, and setters
 
     public HotelFeedbackEntities() {
     }
 
-    public HotelFeedbackEntities(Long id, String hotelName, List<String> likedAmenities, int rating, String description, LocalDateTime createdAt, User user, Hotel_Entity hotel) {
+    public HotelFeedbackEntities(Long id, String hotelName, List<String> likedAmenities, int rating, String description, LocalDateTime createdAt, User user, Hotel_Entity hotel, FeedbackStatus status) {
         this.id = id;
         this.hotelName = hotelName;
         this.likedAmenities = likedAmenities;
@@ -64,6 +67,7 @@ public class HotelFeedbackEntities {
         this.createdAt = createdAt;
         this.user = user;
         this.hotel = hotel;
+        this.status = status;
     }
 
     public Long getId() {
@@ -128,6 +132,14 @@ public class HotelFeedbackEntities {
 
     public void setHotel(Hotel_Entity hotel) {
         this.hotel = hotel;
+    }
+
+    public FeedbackStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(FeedbackStatus status) {
+        this.status = status;
     }
 }
 

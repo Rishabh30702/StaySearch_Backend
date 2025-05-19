@@ -2,6 +2,7 @@ package com.example.StaySearch.StaySearchBackend.HotelFeedback;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,6 +15,9 @@ public class FeedbackController {
     @Autowired
     private HotelFeedbackService feedbackService;
 
+    @Autowired
+    private FeedbackRepository feedbackRepository;
+
     @PostMapping("/feedbacks")
     public ResponseEntity<HotelFeedbackEntities> saveFeedback(
             @RequestBody HotelFeedbackEntities feedback,
@@ -22,11 +26,26 @@ public class FeedbackController {
         return ResponseEntity.ok(feedbackService.saveFeedback(feedback, token));
     }
 
+    @PutMapping("/feedbacks/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> approveFeedback(@PathVariable Long id) {
+        return feedbackRepository.findById(id)
+                .map(feedback -> {
+                    feedback.setStatus(FeedbackStatus.APPROVED);
+                    feedbackRepository.save(feedback);
+                    return ResponseEntity.ok("Feedback approved.");
+                }).orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/getAllFeedbacks")
     public List<HotelFeedbackEntities> getAllFeedbacks() {
         return feedbackService.getAllFeedbacks();
     }
 
+    @GetMapping("/feedbacks/public")
+    public ResponseEntity<List<HotelFeedbackEntities>> getApprovedFeedbacks() {
+        return ResponseEntity.ok(feedbackRepository.findByStatus(FeedbackStatus.APPROVED));
+    }
     @GetMapping("/hotel/{hotelId}")
     public List<HotelFeedbackEntities> getFeedbackForHotel(@PathVariable Integer hotelId) {
         return feedbackService.getFeedbackForHotel(hotelId);
