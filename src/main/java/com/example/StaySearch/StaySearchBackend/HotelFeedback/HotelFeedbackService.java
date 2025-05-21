@@ -74,10 +74,14 @@ public class HotelFeedbackService {
                 HotelFeedbackEntities existing = existingOpt.get();
 
                 if (existing.getUser().getId().equals(currentUser.getId())) {
-                    // Update allowed
+                    // ✅ Update allowed fields
                     existing.setRating(updatedFeedback.getRating());
                     existing.setDescription(updatedFeedback.getDescription());
                     existing.setLikedAmenities(updatedFeedback.getLikedAmenities());
+
+                    // ✅ Reset status to PENDING to require re-approval
+                    existing.setStatus(FeedbackStatus.PENDING);
+
                     return feedbackRepository.save(existing);
                 }
             }
