@@ -20,8 +20,11 @@ com\example\StaySearch\StaySearchBackend\HotelFeedback\FeedbackRepository.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\HomepageBannerController.class
 com\example\StaySearch\StaySearchBackend\JacksonConfig\JacksonConfig.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Service.class
+com\example\StaySearch\StaySearchBackend\PaymentGateway\PaymentController.class
+com\example\StaySearch\StaySearchBackend\PaymentGateway\StripeService.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Controller.class
 com\example\StaySearch\StaySearchBackend\Hotels\RoomRepository.class
+com\example\StaySearch\StaySearchBackend\PaymentGateway\PaymentRequest.class
 com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Entity.class
 com\example\StaySearch\StaySearchBackend\HotelFeedback\FeedbackController.class
 com\example\StaySearch\StaySearchBackend\StaySearchBackendApplication.class
