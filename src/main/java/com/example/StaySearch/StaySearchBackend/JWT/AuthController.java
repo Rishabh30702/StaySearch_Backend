@@ -55,17 +55,17 @@ public class AuthController {
         return response;
     }
 
-//    @PostMapping("/login")
-//    public Map<String, Object> login(@RequestBody User user) {
-//        authenticationManager.authenticate(
-//                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
-//
-//        String token = jwtUtil.generateToken(user.getUsername());
-//        Map<String, Object> response = new HashMap<>();
-//        response.put("message", "Login successful");
-//        response.put("token", token);
-//        return response;
-//    }
+    @PostMapping("/normallogin")
+    public Map<String, Object> Normallogin(@RequestBody User user) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
+
+        String token = jwtUtil.generateToken(user.getUsername());
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Login successful");
+        response.put("token", token);
+        return response;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody User userRequest) {
