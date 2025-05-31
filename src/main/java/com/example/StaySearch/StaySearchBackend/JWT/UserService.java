@@ -163,4 +163,17 @@ public class UserService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Hotelier not found");
         }
     }
+
+    public boolean resetPassword(String username, String newPassword) {
+        Optional<User> optionalUser = userRepository.findByUsername(username);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            String encodedPassword = passwordEncoder.encode(newPassword);
+            user.setPassword(encodedPassword);
+            userRepository.save(user);
+            return true;
+        }
+        return false;
+    }
+
 }

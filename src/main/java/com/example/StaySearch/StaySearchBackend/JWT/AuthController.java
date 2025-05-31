@@ -179,6 +179,28 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/me/password/reset")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> passwordData) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User is not authenticated"));
+        }
+
+        String username = authentication.getName();
+        String newPassword = passwordData.get("newPassword");
+
+        boolean isUpdated = userService.resetPassword(username, newPassword);
+        if (isUpdated) {
+            return ResponseEntity.ok(Map.of("message", "Password reset successfully."));
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Failed to reset password."));
+        }
+    }
+
+
     @PostMapping("/wishlist/{hotelId}")
     public ResponseEntity<?> addToWishlist(@PathVariable Integer hotelId, HttpServletRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
