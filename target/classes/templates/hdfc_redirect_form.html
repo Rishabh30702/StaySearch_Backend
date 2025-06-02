@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body onload="document.forms[0].submit()">
+<form method="post" th:action="${paymentUrl}">
+    <input type="hidden" name="encRequest" th:value="${encRequest}" />
+    <input type="hidden" name="access_code" th:value="${accessCode}" />
+</form>
+</body>
+</html>

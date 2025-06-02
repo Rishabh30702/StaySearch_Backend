@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import java.util.TimeZone;
 
 @SpringBootApplication
+
 @EnableScheduling
 @EnableTransactionManagement
 public class StaySearchBackendApplication {
