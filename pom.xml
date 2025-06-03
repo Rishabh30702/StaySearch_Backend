@@ -46,8 +46,6 @@
 			<groupId>com.paytm</groupId>
 			<artifactId>paytm-checksum</artifactId>
 			<version>1.0.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/libs/PaytmChecksum.jar</systemPath>
 		</dependency>
 
 		<dependency>

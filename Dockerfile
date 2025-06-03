@@ -5,7 +5,10 @@ WORKDIR /app
 # Copy the project files
 COPY . .
 
-# Build the application
+# Install PaytmChecksum.jar into local maven repo inside container
+RUN mvn install:install-file -Dfile=libs/PaytmChecksum.jar -DgroupId=com.paytm -DartifactId=paytm-checksum -Dversion=1.0.0 -Dpackaging=jar
+
+# Now build the project with the dependency available
 RUN mvn clean package -DskipTests
 
 # Use OpenJDK for running the application
