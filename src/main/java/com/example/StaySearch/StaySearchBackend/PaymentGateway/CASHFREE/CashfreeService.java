@@ -48,32 +48,35 @@ public class CashfreeService {
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
             Map<String, Object> responseBody = response.getBody();
 
-            // Try to get payment_session_id (most reliable)
+            // ✅ Try to fetch payment_session_id from root first
             Object sessionIdObj = responseBody.get("payment_session_id");
 
-            // If not found, try inside 'data'
+            // ✅ If not in root, look inside 'data'
             if (sessionIdObj == null && responseBody.containsKey("data")) {
                 Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
-                sessionIdObj = (data != null) ? data.get("payment_session_id") : null;
+                if (data != null) {
+                    sessionIdObj = data.get("payment_session_id");
+                }
             }
 
             if (sessionIdObj != null) {
                 String sessionId = sessionIdObj.toString();
 
-                // Remove trailing duplicate 'payment' if present
+                // Strip trailing repeated 'payment' if it somehow exists
                 while (sessionId.endsWith("payment")) {
                     sessionId = sessionId.substring(0, sessionId.length() - "payment".length());
                 }
 
-                // Build the payment page URL user should be redirected to
                 return "https://sandbox.cashfree.com/pg/payments/" + sessionId;
             }
 
-            throw new RuntimeException("Payment session ID not found in response: " + responseBody);
+            throw new RuntimeException("payment_session_id not found in response: " + responseBody);
         }
 
         throw new RuntimeException("Cashfree session creation failed: " + response.getStatusCode());
     }
+
+
 
 
     public Map<String, Object> getPaymentStatus(String orderId) {
