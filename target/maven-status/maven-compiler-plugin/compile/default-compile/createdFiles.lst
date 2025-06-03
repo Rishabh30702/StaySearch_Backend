@@ -47,10 +47,12 @@ com\example\StaySearch\StaySearchBackend\CloudinaryConfig\CloudinaryService.clas
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Entity.class
 com\example\StaySearch\StaySearchBackend\JWT\UserService.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\PaymentGatewaySettingsController.class
+com\example\StaySearch\StaySearchBackend\PaymentGateway\CASHFREE\CashfreeService.class
 com\example\StaySearch\StaySearchBackend\CommercialAndOffers\OfferRepository.class
 com\example\StaySearch\StaySearchBackend\JWT\UserRepository.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\PromotionalMaterialController.class
 com\example\StaySearch\StaySearchBackend\CommercialAndOffers\OfferStatus.class
+com\example\StaySearch\StaySearchBackend\PaymentGateway\CASHFREE\CashfreeController.class
 com\example\StaySearch\StaySearchBackend\Hotels\HotelierController.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\InformationalPage.class
 com\example\StaySearch\StaySearchBackend\Hotels\Room.class
