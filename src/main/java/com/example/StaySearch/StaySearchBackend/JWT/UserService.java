@@ -168,9 +168,8 @@ public class UserService {
         Optional<User> optionalUser = userRepository.findByUsername(username);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            String encodedPassword = passwordEncoder.encode(newPassword);
-            user.setPassword(encodedPassword);
-            userRepository.save(user);
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);  // Safe: only password is changed
             return true;
         }
         return false;
