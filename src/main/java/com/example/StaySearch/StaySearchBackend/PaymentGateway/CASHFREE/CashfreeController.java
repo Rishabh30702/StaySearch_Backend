@@ -33,4 +33,14 @@ public class CashfreeController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
+    @GetMapping("/cashfree/status/{orderId}")
+    public ResponseEntity<?> getPaymentStatus(@PathVariable String orderId) {
+        try {
+            Map<String, Object> status = cashfreeService.getPaymentStatus(orderId);
+            return ResponseEntity.ok(status);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
 }
