@@ -179,24 +179,22 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/me/password/reset")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> passwordData) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User is not authenticated"));
-        }
-
-        String username = authentication.getName();
+    @PostMapping("/admin/user/password/reset")
+    public ResponseEntity<?> resetUserPassword(@RequestBody Map<String, String> passwordData) {
+        String username = passwordData.get("username");  // user to reset password for
         String newPassword = passwordData.get("newPassword");
 
+        if (username == null || newPassword == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Username and new password are required."));
+        }
+
         boolean isUpdated = userService.resetPassword(username, newPassword);
+
         if (isUpdated) {
-            return ResponseEntity.ok(Map.of("message", "Password reset successfully."));
+            return ResponseEntity.ok(Map.of("message", "Password reset successfully for user: " + username));
         } else {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Failed to reset password."));
+                    .body(Map.of("message", "Failed to reset password for user: " + username));
         }
     }
 
