@@ -50,15 +50,21 @@ public class PaytmController {
 
         try {
             boolean isValidChecksum = PaytmChecksum.verifySignature(parameters, PaytmConfig.MERCHANT_KEY, paytmChecksum);
-            if (isValidChecksum && "01".equals(parameters.get("RESPCODE"))) {
+
+            System.out.println("Received callback parameters: " + parameters);
+            System.out.println("Is Checksum Valid? " + isValidChecksum);
+
+            if ("01".equals(parameters.get("RESPCODE"))) {
                 return ResponseEntity.ok("Payment Successful");
             } else {
                 return ResponseEntity.status(400).body("Payment Failed: " + parameters.get("RESPMSG"));
             }
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Checksum validation failed");
         }
     }
+
 }
 
