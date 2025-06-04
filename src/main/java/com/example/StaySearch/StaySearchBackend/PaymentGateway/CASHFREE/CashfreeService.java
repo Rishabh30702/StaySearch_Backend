@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class CashfreeService {
@@ -20,25 +21,31 @@ public class CashfreeService {
 
     public String createPaymentSession(String orderId, double amount, String currency, String returnUrl) {
         HttpHeaders headers = new HttpHeaders();
-        headers.set("x-client-id", clientId);
-        headers.set("x-client-secret", clientSecret);
-        headers.set("x-api-version", "2022-09-01");
+        headers.set("x-client-id", clientId);          // ✅ Ensure this is defined via @Value
+        headers.set("x-client-secret", clientSecret);  // ✅ Ensure this is defined via @Value
+        headers.set("x-api-version", "2025-01-01");
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         Map<String, Object> body = Map.of(
                 "order_id", orderId,
                 "order_amount", amount,
                 "order_currency", currency,
-                "order_note", "Test order",
+                "order_note", "Test order from backend",
                 "customer_details", Map.of(
-                        "customer_id", "12345",
+                        "customer_id", "CUST_" + UUID.randomUUID(),
                         "customer_email", "test@example.com",
                         "customer_phone", "9999999999"
                 ),
                 "order_meta", Map.of(
                         "return_url", returnUrl
+                ),
+                "payment_method", Map.of(
+                        "upi", Map.of(
+                                "channel", "link"  // ✅ Enable link-based payment flow
+                        )
                 )
         );
+
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
         String url = "https://sandbox.cashfree.com/pg/orders";
@@ -47,11 +54,8 @@ public class CashfreeService {
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
             Map<String, Object> responseBody = response.getBody();
-
-            // ✅ Try to fetch payment_session_id from root first
             Object sessionIdObj = responseBody.get("payment_session_id");
 
-            // ✅ If not in root, look inside 'data'
             if (sessionIdObj == null && responseBody.containsKey("data")) {
                 Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
                 if (data != null) {
@@ -60,14 +64,7 @@ public class CashfreeService {
             }
 
             if (sessionIdObj != null) {
-                String sessionId = sessionIdObj.toString();
-
-                // Strip trailing repeated 'payment' if it somehow exists
-                while (sessionId.endsWith("payment")) {
-                    sessionId = sessionId.substring(0, sessionId.length() - "payment".length());
-                }
-
-                return "https://sandbox.cashfree.com/pg/payments/" + sessionId;
+                return sessionIdObj.toString();
             }
 
             throw new RuntimeException("payment_session_id not found in response: " + responseBody);

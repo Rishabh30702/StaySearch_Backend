@@ -1,7 +1,9 @@
 package com.example.StaySearch.StaySearchBackend.PaymentGateway.CASHFREE;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
@@ -21,18 +23,11 @@ public class CashfreeController {
         try {
             String orderId = (String) requestData.get("orderId");
             double amount = Double.parseDouble(requestData.get("amount").toString());
-            String currency = "INR";
             String returnUrl = (String) requestData.get("returnUrl");
 
-            String paymentLink = cashfreeService.createPaymentSession(orderId, amount, currency, returnUrl);
+            String sessionId = cashfreeService.createPaymentSession(orderId, amount, "INR", returnUrl);
 
-            if (paymentLink == null) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("error", "Cashfree did not return a payment link"));
-            }
-
-            return ResponseEntity.ok(Map.of("paymentLink", paymentLink));
-
+            return ResponseEntity.ok(Map.of("paymentSessionId", sessionId));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -51,4 +46,5 @@ public class CashfreeController {
                     .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Unknown error occurred"));
         }
     }
+
 }
