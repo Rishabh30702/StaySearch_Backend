@@ -179,24 +179,30 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/admin/user/password/reset")
-    public ResponseEntity<?> resetUserPassword(@RequestBody Map<String, String> passwordData) {
-        String username = passwordData.get("username");  // user to reset password for
-        String newPassword = passwordData.get("newPassword");
+    @PutMapping("/admin/user/update")
+    public ResponseEntity<?> updateUserDetails(@RequestBody Map<String, String> userData) {
+        String username = userData.get("username");
+        String newPassword = userData.get("newPassword"); // optional
+        String newPhone = userData.get("phone");          // optional
+        String newRole = userData.get("role");            // optional
 
-        if (username == null || newPassword == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Username and new password are required."));
+        if (username == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Username is required."));
         }
 
-        boolean isUpdated = userService.resetPassword(username, newPassword);
-
-        if (isUpdated) {
-            return ResponseEntity.ok(Map.of("message", "Password reset successfully for user: " + username));
-        } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Failed to reset password for user: " + username));
+        try {
+            boolean isUpdated = userService.updateUserDetails(username, newPassword, newPhone, newRole);
+            if (isUpdated) {
+                return ResponseEntity.ok(Map.of("message", "User updated successfully: " + username));
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("message", "Failed to update user: " + username));
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
 
 
     @PostMapping("/wishlist/{hotelId}")

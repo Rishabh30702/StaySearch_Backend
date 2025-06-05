@@ -175,5 +175,38 @@ public class UserService {
         return false;
     }
 
+    public boolean updateUserDetails(String username, String newPassword, String phone, String role) {
+        Optional<User> optionalUser = userRepository.findByUsername(username);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+
+            // Update password if provided
+            if (newPassword != null && !newPassword.trim().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(newPassword));
+            }
+
+            // Update phone if provided
+            if (phone != null && !phone.trim().isEmpty()) {
+                user.setPhonenumber(phone);
+            }
+
+            // Use exact casing that matches the DB: "ADMIN", "Hotelier", "USER"
+            if (role != null && !role.trim().isEmpty()) {
+                List<String> validRoles = List.of("ADMIN", "Hotelier", "USER");
+                if (!validRoles.contains(role)) {
+                    throw new IllegalArgumentException("Invalid role: " + role);
+                }
+                user.setRole(role);
+            }
+
+            userRepository.save(user);
+            return true;
+        }
+
+        return false;
+    }
+
+
+
 
 }
