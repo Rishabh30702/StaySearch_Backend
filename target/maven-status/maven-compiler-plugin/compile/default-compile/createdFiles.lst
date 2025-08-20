@@ -2,6 +2,7 @@ com\example\StaySearch\StaySearchBackend\JWT\CustomUserDetailsService.class
 com\example\StaySearch\StaySearchBackend\Hotels\RoomRequset.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\HomepageBanner.class
 com\example\StaySearch\StaySearchBackend\Exception\ResourceNotFoundException.class
+com\example\StaySearch\StaySearchBackend\Razorpay\PaymentsController.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\HDFC\HdfcEncryptionUtil.class
 com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Service.class
 com\example\StaySearch\StaySearchBackend\CommercialAndOffers\OfferController.class
@@ -24,6 +25,7 @@ com\example\StaySearch\StaySearchBackend\JacksonConfig\JacksonConfig.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Service.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\PaymentController.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\StripeService.class
+com\example\StaySearch\StaySearchBackend\Razorpay\Dtos.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Controller.class
 com\example\StaySearch\StaySearchBackend\Hotels\RoomRepository.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\PaymentRequest.class
@@ -40,8 +42,11 @@ com\example\StaySearch\StaySearchBackend\Hotels\RoomRequset$RoomRequest.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\PaymentGatewaySettingsRepository.class
 com\example\StaySearch\StaySearchBackend\CommercialAndOffers\OfferEntity.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\PaymentGatewaySettingsService.class
+com\example\StaySearch\StaySearchBackend\Razorpay\Dtos$VerifyRequest.class
 com\example\StaySearch\StaySearchBackend\HotelFeedback\FeedbackStatus.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\InformationalPageRepository.class
+com\example\StaySearch\StaySearchBackend\Razorpay\RazorpayClient.class
+com\example\StaySearch\StaySearchBackend\Razorpay\Dtos$CreateOrderRequest.class
 com\example\StaySearch\StaySearchBackend\CommercialAndOffers\SchedulerConfig.class
 com\example\StaySearch\StaySearchBackend\CloudinaryConfig\CloudinaryService.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Entity.class
@@ -51,7 +56,9 @@ com\example\StaySearch\StaySearchBackend\PaymentGateway\CASHFREE\CashfreeService
 com\example\StaySearch\StaySearchBackend\CommercialAndOffers\OfferRepository.class
 com\example\StaySearch\StaySearchBackend\JWT\UserRepository.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\PromotionalMaterialController.class
+com\example\StaySearch\StaySearchBackend\Razorpay\HmacUtil.class
 com\example\StaySearch\StaySearchBackend\CommercialAndOffers\OfferStatus.class
+com\example\StaySearch\StaySearchBackend\Razorpay\BookingService.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\CASHFREE\CashfreeController.class
 com\example\StaySearch\StaySearchBackend\Hotels\HotelierController.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\InformationalPage.class
