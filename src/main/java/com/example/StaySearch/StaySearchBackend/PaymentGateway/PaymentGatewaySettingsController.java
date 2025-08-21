@@ -22,5 +22,17 @@ public class PaymentGatewaySettingsController {
         service.setActiveGateway(gateway);
         return ResponseEntity.ok().build();
     }
+
+    // --- New for Amount ---
+    @GetMapping("/amount")
+    public ResponseEntity<Double> getAmount() {
+        return ResponseEntity.ok(service.getAmount());
+    }
+
+    @PutMapping("/admin/update-amount")
+    public ResponseEntity<Void> updateAmount(@RequestBody Double amount) {
+        service.setAmount(amount);
+        return ResponseEntity.ok().build();
+    }
 }
 

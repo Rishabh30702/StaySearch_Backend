@@ -8,10 +8,12 @@ public class PaymentGatewaySettings {
     @Id
     private Long id = 1L; // singleton row
     private String activeGateway; // "STRIPE" or "HDFC"
+    private Double amount;
 
-    public PaymentGatewaySettings(Long id, String activeGateway) {
+    public PaymentGatewaySettings(Long id, String activeGateway, Double amount) {
         this.id = id;
         this.activeGateway = activeGateway;
+        this.amount = amount;
     }
 
     public PaymentGatewaySettings() {
@@ -31,5 +33,12 @@ public class PaymentGatewaySettings {
 
     public void setActiveGateway(String activeGateway) {
         this.activeGateway = activeGateway;
+    }
+    public Double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Double amount) {
+        this.amount = amount;
     }
 }
