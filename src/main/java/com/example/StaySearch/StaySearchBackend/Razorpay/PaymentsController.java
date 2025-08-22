@@ -97,4 +97,22 @@ public class PaymentsController {
         return ResponseEntity.ok("ok");
     }
 
+    @PostMapping("/send-invoice")
+    public ResponseEntity<?> sendInvoice(@RequestBody @Valid InvoiceRequest body) {
+        try {
+            bookingService.sendInvoiceEmail(
+                    body.orderId,
+                    body.paymentId,
+                    body.customerEmail,
+                    body.hotelName,
+                    body.amountInPaise
+            );
+            return ResponseEntity.ok(Map.of("invoiceSent", true));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("invoiceSent", false, "error", e.getMessage()));
+        }
+    }
+
 }

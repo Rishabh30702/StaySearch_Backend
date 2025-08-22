@@ -46,8 +46,10 @@ com\example\StaySearch\StaySearchBackend\Razorpay\Dtos$VerifyRequest.class
 com\example\StaySearch\StaySearchBackend\HotelFeedback\FeedbackStatus.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\InformationalPageRepository.class
 com\example\StaySearch\StaySearchBackend\Razorpay\RazorpayClient.class
+com\example\StaySearch\StaySearchBackend\Razorpay\InvoiceService.class
 com\example\StaySearch\StaySearchBackend\Razorpay\Dtos$CreateOrderRequest.class
 com\example\StaySearch\StaySearchBackend\CommercialAndOffers\SchedulerConfig.class
+com\example\StaySearch\StaySearchBackend\Razorpay\InvoiceRequest.class
 com\example\StaySearch\StaySearchBackend\CloudinaryConfig\CloudinaryService.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Entity.class
 com\example\StaySearch\StaySearchBackend\JWT\UserService.class
