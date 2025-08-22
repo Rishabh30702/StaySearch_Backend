@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -20,14 +22,23 @@ public class PaymentsController {
     private final RazorpayClient rp;
     private final BookingService bookingService;
 
+    @Autowired
+    private InvoiceService invoiceService;
+
+    @Autowired
+    private InvoiceRepository invoiceRepository;
+
     public PaymentsController(RazorpayClient rp, BookingService bookingService) {
         this.rp = rp;
         this.bookingService = bookingService;
     }
 
-    @Value("${RAZORPAY_KEY_ID}") String keyId;
-    @Value("${RAZORPAY_KEY_SECRET}") String keySecret;
-    @Value("${RAZORPAY_WEBHOOK_SECRET}") String webhookSecret;
+    @Value("${RAZORPAY_KEY_ID}")
+    String keyId;
+    @Value("${RAZORPAY_KEY_SECRET}")
+    String keySecret;
+    @Value("${RAZORPAY_WEBHOOK_SECRET}")
+    String webhookSecret;
 
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(@RequestBody @Valid Dtos.CreateOrderRequest req) {
@@ -52,7 +63,7 @@ public class PaymentsController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("verified", false));
     }
 
-    @PostMapping(value="/webhook", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/webhook", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> webhook(
             @RequestHeader("X-Razorpay-Signature") String signature,
             @RequestBody String body) {
@@ -97,22 +108,60 @@ public class PaymentsController {
         return ResponseEntity.ok("ok");
     }
 
-    @PostMapping("/send-invoice")
-    public ResponseEntity<?> sendInvoice(@RequestBody @Valid InvoiceRequest body) {
-        try {
-            bookingService.sendInvoiceEmail(
-                    body.orderId,
-                    body.paymentId,
-                    body.customerEmail,
-                    body.hotelName,
-                    body.amountInPaise
-            );
-            return ResponseEntity.ok(Map.of("invoiceSent", true));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("invoiceSent", false, "error", e.getMessage()));
-        }
+    @PostMapping("/invoice")
+    public ResponseEntity<?> createInvoice(@RequestBody @Valid InvoiceRequest req) {
+        invoiceService.generateAndSendInvoice(
+                req.getOrderId(),
+                req.getPaymentId(),
+                req.getCustomerEmail(),
+                req.getHotelName(),
+                req.getAmountInPaise(),
+                req.getCustomerPhone()
+        );
+        return ResponseEntity.ok(Map.of("success", true, "message", "Invoice generated & sent"));
     }
 
+    // ✅ Get all invoices (admin)
+    @GetMapping("/invoice")
+    public List<InvoiceRequest> getAllInvoices() {
+        return invoiceRepository.findAll();
+    }
+
+    // ✅ Get invoices for a specific customer
+    @GetMapping("/invoice/customer/{email}")
+    public List<InvoiceRequest> getInvoicesByCustomer(@PathVariable String email) {
+        return invoiceRepository.findByCustomerEmail(email);
+    }
+
+    // ✅ Get single invoice by OrderId
+    @GetMapping("/invoice/order/{orderId}")
+    public ResponseEntity<?> getInvoiceByOrderId(@PathVariable String orderId) {
+        return invoiceRepository.findByOrderId(orderId)
+                .map(invoice -> ResponseEntity.ok(invoice))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ✅ Download invoice (redirect to Cloudinary URL)
+    @GetMapping("/invoice/{id}/download")
+    public ResponseEntity<byte[]> downloadInvoice(@PathVariable Long id) {
+        return invoiceRepository.findById(id)
+                .map(invoice -> {
+                    try {
+                        // 🔽 Fetch file from Cloudinary
+                        java.net.URL url = new java.net.URL(invoice.getInvoiceUrl());
+                        try (java.io.InputStream in = url.openStream()) {
+                            byte[] pdfBytes = in.readAllBytes();
+
+                            return ResponseEntity.ok()
+                                    .header("Content-Disposition", "attachment; filename=Invoice-" + invoice.getOrderId() + ".pdf")
+                                    .header("Content-Type", "application/pdf")
+                                    .body(pdfBytes);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return ResponseEntity.status(500).body(new byte[0]); // 👈 fixed
+                    }
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

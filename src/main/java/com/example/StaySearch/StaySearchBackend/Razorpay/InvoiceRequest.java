@@ -1,23 +1,46 @@
 package com.example.StaySearch.StaySearchBackend.Razorpay;
 
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "invoices")
 public class InvoiceRequest {
-    public String orderId;
-    public String paymentId;
-    public String customerEmail;
-    public String customerPhone;
-    public String hotelName;
-    public long amountInPaise;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String orderId;
+    private String paymentId;
+    private String customerEmail;
+    private String customerPhone;
+    private String hotelName;
+    private Long amountInPaise;
+
+    private String invoiceUrl;   // ✅ Cloudinary URL
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     public InvoiceRequest() {
     }
 
-    public InvoiceRequest(String orderId, String paymentId, String customerEmail, String customerPhone, String hotelName, long amountInPaise) {
+    public InvoiceRequest(Long id, String orderId, String paymentId, String customerEmail, String customerPhone, String hotelName, Long amountInPaise, String invoiceUrl, LocalDateTime createdAt) {
+        this.id = id;
         this.orderId = orderId;
         this.paymentId = paymentId;
         this.customerEmail = customerEmail;
         this.customerPhone = customerPhone;
         this.hotelName = hotelName;
         this.amountInPaise = amountInPaise;
+        this.invoiceUrl = invoiceUrl;
+        this.createdAt = createdAt;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getOrderId() {
@@ -60,12 +83,28 @@ public class InvoiceRequest {
         this.hotelName = hotelName;
     }
 
-    public long getAmountInPaise() {
+    public Long getAmountInPaise() {
         return amountInPaise;
     }
 
-    public void setAmountInPaise(long amountInPaise) {
+    public void setAmountInPaise(Long amountInPaise) {
         this.amountInPaise = amountInPaise;
+    }
+
+    public String getInvoiceUrl() {
+        return invoiceUrl;
+    }
+
+    public void setInvoiceUrl(String invoiceUrl) {
+        this.invoiceUrl = invoiceUrl;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }
 

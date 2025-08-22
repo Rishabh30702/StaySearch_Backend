@@ -1,4 +1,5 @@
 com\example\StaySearch\StaySearchBackend\JWT\CustomUserDetailsService.class
+com\example\StaySearch\StaySearchBackend\Razorpay\InvoiceRepository.class
 com\example\StaySearch\StaySearchBackend\Hotels\RoomRequset.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\HomepageBanner.class
 com\example\StaySearch\StaySearchBackend\Exception\ResourceNotFoundException.class

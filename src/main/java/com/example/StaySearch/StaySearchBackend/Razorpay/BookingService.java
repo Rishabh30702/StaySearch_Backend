@@ -12,8 +12,4 @@ public class BookingService {
         System.out.println("[BookingService] Confirming booking for order=" + orderId + " payment=" + paymentId);
         // TODO: Save to DB, send email, etc.
     }
-    public void sendInvoiceEmail(String orderId, String paymentId, String customerEmail,
-                                 String hotelName, long amountInPaise) {
-        invoiceService.generateAndSendInvoice(orderId, paymentId, customerEmail, hotelName, amountInPaise);
-    }
 }
