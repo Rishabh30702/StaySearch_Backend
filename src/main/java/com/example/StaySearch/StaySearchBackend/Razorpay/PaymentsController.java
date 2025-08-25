@@ -164,4 +164,36 @@ public class PaymentsController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/invoice/order/{orderId}/download")
+    public ResponseEntity<byte[]> downloadInvoiceByOrderId(@PathVariable String orderId) {
+        return invoiceRepository.findByOrderId(orderId)
+                .map(invoice -> {
+                    try {
+                        String fileUrl = invoice.getInvoiceUrl();
+                        System.out.println("[Download Invoice] Fetching from URL: " + fileUrl);
+
+                        if (fileUrl == null || fileUrl.isBlank()) {
+                            return ResponseEntity.status(404).body(new byte[0]);
+                        }
+
+                        // 🔽 Fetch file from Cloudinary
+                        java.net.URL url = new java.net.URL(fileUrl);
+                        try (java.io.InputStream in = url.openStream()) {
+                            byte[] pdfBytes = in.readAllBytes();
+
+                            return ResponseEntity.ok()
+                                    .header("Content-Disposition", "attachment; filename=Invoice-" + invoice.getOrderId() + ".pdf")
+                                    .header("Content-Type", "application/pdf")
+                                    .body(pdfBytes);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return ResponseEntity.status(500).body(new byte[0]);
+                    }
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+
 }
