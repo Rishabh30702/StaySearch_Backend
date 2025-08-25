@@ -1,11 +1,17 @@
 package com.example.StaySearch.StaySearchBackend.HotelFeedback;
 
+import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Entity;
+import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Repository;
+import com.example.StaySearch.StaySearchBackend.JWT.JwtUtil;
+import com.example.StaySearch.StaySearchBackend.JWT.User;
+import com.example.StaySearch.StaySearchBackend.JWT.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/feedbacks")
@@ -18,6 +24,15 @@ public class FeedbackController {
     @Autowired
     private FeedbackRepository feedbackRepository;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private Hotel_Repository hotelRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
     @PostMapping("/feedbacks")
     public ResponseEntity<HotelFeedbackEntities> saveFeedback(
             @RequestBody HotelFeedbackEntities feedback,
@@ -25,6 +40,32 @@ public class FeedbackController {
         String token = authHeader.substring(7); // remove "Bearer "
         return ResponseEntity.ok(feedbackService.saveFeedback(feedback, token));
     }
+
+    @PostMapping("/save")
+    public ResponseEntity<?> saveFeedback(
+            @RequestBody HotelFeedbackDTO dto,
+            @RequestHeader("Authorization") String authHeader) {
+
+        // Remove "Bearer " prefix
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+
+        HotelFeedbackEntities feedback = new HotelFeedbackEntities();
+        feedback.setHotelName(dto.getHotelName());
+        feedback.setLikedAmenities(dto.getLikedAmenities());
+        feedback.setRating(dto.getRating());
+        feedback.setDescription(dto.getDescription());
+
+        if (dto.getHotelId() != null) {
+            Optional<Hotel_Entity> hotelOpt = hotelRepository.findById(dto.getHotelId());
+            hotelOpt.ifPresent(feedback::setHotel);
+        }
+
+        HotelFeedbackEntities saved = feedbackService.saveFeedback(feedback, token);
+        return ResponseEntity.ok(saved);
+    }
+
+
+
 
     @PutMapping("/feedbacks/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')")
@@ -94,4 +135,22 @@ public class FeedbackController {
             return ResponseEntity.status(403).body("Unauthorized to delete this feedback");
         }
     }
+
+    @GetMapping("/hotelier/my-feedbacks")
+    public ResponseEntity<List<HotelFeedbackEntities>> getFeedbacksForHotelierPortal(
+            @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        String username = jwtUtil.extractUsername(token);
+        Optional<User> userOpt = userRepository.findByUsername(username);
+
+        if (userOpt.isPresent()) {
+            List<HotelFeedbackEntities> feedbacks =
+                    feedbackService.getFeedbacksForHotelier(userOpt.get().getId().intValue());
+            return ResponseEntity.ok(feedbacks);
+        } else {
+            return ResponseEntity.status(401).build();
+        }
+    }
+
+
 }

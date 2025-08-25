@@ -1,5 +1,6 @@
 package com.example.StaySearch.StaySearchBackend.HotelFeedback;
 
+import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Entity;
 import com.example.StaySearch.StaySearchBackend.JWT.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -14,6 +15,9 @@ public interface FeedbackRepository extends JpaRepository<HotelFeedbackEntities,
     List<HotelFeedbackEntities> findByUser(User user);
 
     List<HotelFeedbackEntities> findByStatus(FeedbackStatus status);
+
+    // ✅ New method to fetch feedbacks for a list of hotels (hotelier's hotels)
+            List<HotelFeedbackEntities> findByHotelInAndStatus(List<Hotel_Entity> hotels, FeedbackStatus status);
 
 
 }

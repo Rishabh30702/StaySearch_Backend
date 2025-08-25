@@ -1,5 +1,7 @@
 package com.example.StaySearch.StaySearchBackend.HotelFeedback;
 
+import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Entity;
+import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Repository;
 import com.example.StaySearch.StaySearchBackend.JWT.JwtUtil;
 import com.example.StaySearch.StaySearchBackend.JWT.User;
 import com.example.StaySearch.StaySearchBackend.JWT.UserRepository;
@@ -20,6 +22,9 @@ public class HotelFeedbackService {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private Hotel_Repository hotelRepository;
+
 //    public HotelFeedbackEntities saveFeedback(HotelFeedbackEntities feedback, String token) {
 //        String username = jwtUtil.extractUsername(token);
 //        Optional<User> userOpt = userRepository.findByUsername(username); // Use findByUsername or findByEmail
@@ -31,13 +36,18 @@ public class HotelFeedbackService {
 
     public HotelFeedbackEntities saveFeedback(HotelFeedbackEntities feedback, String token) {
         String username = jwtUtil.extractUsername(token);
-        Optional<User> userOpt = userRepository.findByUsername(username); // Use findByUsername or findByEmail
-        userOpt.ifPresent(feedback::setUser);
+        userRepository.findByUsername(username).ifPresent(feedback::setUser);
 
-        feedback.setStatus(FeedbackStatus.PENDING); // ✅ set initial status
+        feedback.setStatus(FeedbackStatus.PENDING);
+
+        if (feedback.getHotel() == null) {
+            throw new RuntimeException("Hotel must be set before saving feedback.");
+        }
 
         return feedbackRepository.save(feedback);
     }
+
+
 
 
     public List<HotelFeedbackEntities> getAllFeedbacks() {
@@ -101,6 +111,13 @@ public class HotelFeedbackService {
             }
         }
         return false;
+    }
+    public List<HotelFeedbackEntities> getFeedbacksForHotelier(Integer hotelierUserId) {
+        // Get all hotels of this hotelier
+        List<Hotel_Entity> hotels = hotelRepository.findByUser_Id(hotelierUserId);
+
+        // Fetch only approved feedbacks for these hotels
+        return feedbackRepository.findByHotelInAndStatus(hotels, FeedbackStatus.APPROVED);
     }
 
 }

@@ -39,6 +39,7 @@ com\example\StaySearch\StaySearchBackend\PaymentGateway\HDFC\HdfcPaymentControll
 com\example\StaySearch\StaySearchBackend\JWT\JwtAuthenticationFilter.class
 com\example\StaySearch\StaySearchBackend\JWT\SecurityConfig.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\PromotionalMaterialRepository.class
+com\example\StaySearch\StaySearchBackend\HotelFeedback\HotelFeedbackDTO.class
 com\example\StaySearch\StaySearchBackend\Hotels\RoomRequset$RoomRequest.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\PaymentGatewaySettingsRepository.class
 com\example\StaySearch\StaySearchBackend\CommercialAndOffers\OfferEntity.class
