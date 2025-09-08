@@ -475,5 +475,21 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/me/status")
+    public ResponseEntity<Map<String, String>> getCurrentUserStatus() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated() ||
+                "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User is not authenticated"));
+        }
+
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return ResponseEntity.ok(Map.of("status", user.getStatus()));
+    }
 
 }
