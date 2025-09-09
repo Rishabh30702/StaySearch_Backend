@@ -317,10 +317,16 @@ public class AuthController {
     }
 
     @PostMapping("/reject/{id}")
-    public ResponseEntity<Map<String, String>> rejectHotelier(@PathVariable Long id) {
-        userService.updateStatus(id, "REJECTED");
+    public ResponseEntity<Map<String, String>> rejectHotelier(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request
+    ) {
+        String remark = request.get("remark"); // Get remark from JSON body
+        userService.updateStatusAndRemark(id, "REJECTED", remark);
+
         Map<String, String> response = new HashMap<>();
         response.put("message", "Hotelier rejected successfully.");
+        response.put("remark", remark);
         return ResponseEntity.ok(response);
     }
 

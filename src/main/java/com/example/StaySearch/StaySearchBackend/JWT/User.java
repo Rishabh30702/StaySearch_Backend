@@ -51,6 +51,9 @@ public class User {
     @Column(name = "status", nullable = true)
     private String status; // Only used for hoteliers
 
+    @Column(name = "rejection_remark")
+    private String rejectionRemark;
+
     public User() {
     }
 
@@ -129,5 +132,13 @@ public class User {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getRejectionRemark() {
+        return rejectionRemark;
+    }
+
+    public void setRejectionRemark(String rejectionRemark) {
+        this.rejectionRemark = rejectionRemark;
     }
 }

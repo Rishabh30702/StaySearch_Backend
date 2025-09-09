@@ -164,6 +164,21 @@ public class UserService {
         }
     }
 
+    public ResponseEntity<?> updateStatusAndRemark(Long id, String status, String remark) {
+        Optional<User> optional = userRepository.findById(id);
+        if (optional.isPresent()) {
+            User hotelier = optional.get();
+            hotelier.setStatus(status);
+            hotelier.setRejectionRemark(remark);  // save remark
+            userRepository.save(hotelier);
+
+            return ResponseEntity.ok().body("Status updated to " + status + " with remark: " + remark);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Hotelier not found");
+        }
+    }
+
+
     public boolean resetPassword(String username, String newPassword) {
         Optional<User> optionalUser = userRepository.findByUsername(username);
         if (optionalUser.isPresent()) {
