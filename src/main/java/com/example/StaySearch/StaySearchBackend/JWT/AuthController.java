@@ -390,11 +390,6 @@ public class AuthController {
                     .body(Map.of("message", "Access denied: not a hotelier account"));
         }
 
-        if (dbUser.getStatus() == null || !"APPROVED".equalsIgnoreCase(dbUser.getStatus())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "Your hotelier account is pending admin approval."));
-        }
-
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(userRequest.getUsername(), userRequest.getPassword()));
@@ -495,7 +490,16 @@ public class AuthController {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return ResponseEntity.ok(Map.of("status", user.getStatus()));
+        Map<String, String> response = new HashMap<>();
+        response.put("status", user.getStatus());
+
+        // If rejected, include the remark
+        if ("REJECTED".equalsIgnoreCase(user.getStatus())) {
+            response.put("remark", user.getRejectionRemark());
+        }
+
+        return ResponseEntity.ok(response); // ✅ return the response with remark
     }
+
 
 }
