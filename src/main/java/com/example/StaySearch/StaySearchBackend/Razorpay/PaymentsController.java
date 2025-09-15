@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -74,6 +75,39 @@ public class PaymentsController {
         ));
     }
 
+    @GetMapping("/check-payment-status/{paymentId}")
+    public ResponseEntity<Map<String, Object>> checkPaymentStatus(@PathVariable String paymentId) {
+        try {
+            JsonNode payment = rp.fetchPayment(paymentId);
+            String status = payment.get("status").asText(); // created | authorized | captured | refunded | failed
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", status);
+            response.put("paymentId", paymentId);
+
+            if ("captured".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status)) {
+                String orderId = payment.has("order_id") ? payment.get("order_id").asText() : null;
+
+                bookingService.confirmBooking(orderId, paymentId);
+                response.put("verified", true);
+
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("verified", false);
+                return ResponseEntity.ok(response);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to fetch payment status");
+            errorResponse.put("details", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+
+
     @PostMapping("/verify-payment-link")
     public ResponseEntity<?> verifyPaymentLink(@RequestBody Map<String, String> req) {
         String orderId = req.get("orderId");
@@ -118,39 +152,33 @@ public class PaymentsController {
             @RequestParam Map<String, String> allParams,
             HttpServletResponse response) throws IOException {
 
-        // Extract parameters sent by Razorpay
         String razorpayPaymentId = allParams.get("razorpay_payment_id");
         String razorpayOrderId = allParams.get("razorpay_order_id");
         String razorpaySignature = allParams.get("razorpay_signature");
-        String userData = allParams.get("userData"); // optional
 
-        if (razorpayPaymentId == null || razorpayOrderId == null || razorpaySignature == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing Razorpay payment parameters");
-            return;
-        }
-
-        // ✅ Verify the signature using Hmac SHA256
+        // ✅ Verify signature first
         String payload = razorpayOrderId + "|" + razorpayPaymentId;
         String expectedSignature = HmacUtil.hmacSha256Hex(payload, keySecret);
-
         if (!expectedSignature.equals(razorpaySignature)) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid signature");
             return;
         }
 
-        // ✅ Optional: mark payment as successful in backend
         bookingService.confirmBooking(razorpayOrderId, razorpayPaymentId);
 
-        // Build redirect URL to Angular frontend
-        String frontendOrigin = "http://localhost:4200"; // switch to production URL in prod frontend
-        String redirectUrl = frontendOrigin + "/payment-success?"
-                + "razorpay_payment_id=" + URLEncoder.encode(razorpayPaymentId, StandardCharsets.UTF_8)
-                + "&razorpay_order_id=" + URLEncoder.encode(razorpayOrderId, StandardCharsets.UTF_8)
-                + "&userData=" + (userData != null ? URLEncoder.encode(userData, StandardCharsets.UTF_8) : "");
-
-        // Redirect to Angular page
-        response.sendRedirect(redirectUrl);
+        // ✅ Return small HTML page that closes window
+        String closePage = """
+            <html>
+            <body onload="window.close();">
+              <p>Payment successful. You can close this tab.</p>
+              <script>window.close();</script>
+            </body>
+            </html>
+            """;
+        response.setContentType("text/html");
+        response.getWriter().write(closePage);
     }
+
 
 
 
