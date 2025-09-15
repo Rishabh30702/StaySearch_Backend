@@ -142,7 +142,7 @@ public class PaymentsController {
         bookingService.confirmBooking(razorpayOrderId, razorpayPaymentId);
 
         // Build redirect URL to Angular frontend
-        String frontendOrigin = "https://testing.valliento.tech"; // switch to production URL in prod
+        String frontendOrigin = "http://localhost:8080"; // switch to production URL in prod
         String redirectUrl = frontendOrigin + "/payment-success?"
                 + "razorpay_payment_id=" + URLEncoder.encode(razorpayPaymentId, StandardCharsets.UTF_8)
                 + "&razorpay_order_id=" + URLEncoder.encode(razorpayOrderId, StandardCharsets.UTF_8)
