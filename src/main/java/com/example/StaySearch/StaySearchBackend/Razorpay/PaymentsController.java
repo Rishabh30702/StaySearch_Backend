@@ -147,6 +147,51 @@ public class PaymentsController {
     }
 
 
+//    @RequestMapping(value = "/callback", method = {RequestMethod.GET, RequestMethod.POST})
+//    public void paymentCallback(
+//            @RequestParam Map<String, String> allParams,
+//            HttpServletResponse response) throws IOException {
+//
+//        String razorpayPaymentId = allParams.get("razorpay_payment_id");
+//        String razorpayOrderId = allParams.get("razorpay_order_id");
+//        String userData = allParams.get("userData"); // optional
+//        String razorpaySignature = allParams.get("razorpay_signature");
+//
+//        // ✅ Basic validation
+//        if (razorpayPaymentId == null || razorpayOrderId == null || razorpaySignature == null) {
+//            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing required parameters");
+//            return;
+//        }
+//
+//        // ✅ Verify signature
+//        String payload = razorpayOrderId + "|" + razorpayPaymentId;
+//        String expectedSignature = HmacUtil.hmacSha256Hex(payload, keySecret);
+//        if (!expectedSignature.equals(razorpaySignature)) {
+//            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid signature");
+//            return;
+//        }
+//
+//        // ✅ Confirm booking in backend
+//        bookingService.confirmBooking(razorpayOrderId, razorpayPaymentId);
+//
+//        // ✅ Build redirect URL for Angular page
+//        String redirectUrl = "http://localhost:4200/payment-success?"
+//                + "razorpay_payment_id=" + URLEncoder.encode(razorpayPaymentId, StandardCharsets.UTF_8)
+//                + "&razorpay_order_id=" + URLEncoder.encode(razorpayOrderId, StandardCharsets.UTF_8);
+//
+////        String redirectUrl = "http://testing.valliento.tech/payment-success?"  // later replace localhost to prod URL frontend
+////                + "razorpay_payment_id=" + URLEncoder.encode(razorpayPaymentId, StandardCharsets.UTF_8)
+////                + "&razorpay_order_id=" + URLEncoder.encode(razorpayOrderId, StandardCharsets.UTF_8);
+//
+//
+//        if (userData != null && !userData.isEmpty()) {
+//            redirectUrl += "&userData=" + URLEncoder.encode(userData, StandardCharsets.UTF_8);
+//        }
+//
+//        // ✅ Redirect to Angular frontend
+//        response.sendRedirect(redirectUrl);
+//    }
+
     @RequestMapping(value = "/callback", method = {RequestMethod.GET, RequestMethod.POST})
     public void paymentCallback(
             @RequestParam Map<String, String> allParams,
@@ -154,7 +199,6 @@ public class PaymentsController {
 
         String razorpayPaymentId = allParams.get("razorpay_payment_id");
         String razorpayOrderId = allParams.get("razorpay_order_id");
-        String userData = allParams.get("userData"); // optional
         String razorpaySignature = allParams.get("razorpay_signature");
 
         // ✅ Basic validation
@@ -163,7 +207,7 @@ public class PaymentsController {
             return;
         }
 
-        // ✅ Verify signature
+        // ✅ Verify Razorpay signature
         String payload = razorpayOrderId + "|" + razorpayPaymentId;
         String expectedSignature = HmacUtil.hmacSha256Hex(payload, keySecret);
         if (!expectedSignature.equals(razorpaySignature)) {
@@ -174,23 +218,24 @@ public class PaymentsController {
         // ✅ Confirm booking in backend
         bookingService.confirmBooking(razorpayOrderId, razorpayPaymentId);
 
-        // ✅ Build redirect URL for Angular page
-        String redirectUrl = "http://localhost:4200/payment-success?"
-                + "razorpay_payment_id=" + URLEncoder.encode(razorpayPaymentId, StandardCharsets.UTF_8)
-                + "&razorpay_order_id=" + URLEncoder.encode(razorpayOrderId, StandardCharsets.UTF_8);
-
-//        String redirectUrl = "http://localhost:4200/payment-success?"  // later replace localhost to prod URL frontend
-//                + "razorpay_payment_id=" + URLEncoder.encode(razorpayPaymentId, StandardCharsets.UTF_8)
-//                + "&razorpay_order_id=" + URLEncoder.encode(razorpayOrderId, StandardCharsets.UTF_8);
-
-
-        if (userData != null && !userData.isEmpty()) {
-            redirectUrl += "&userData=" + URLEncoder.encode(userData, StandardCharsets.UTF_8);
-        }
-
-        // ✅ Redirect to Angular frontend
-        response.sendRedirect(redirectUrl);
+        // ✅ Respond with HTML that shows message + auto closes tab
+        response.setContentType("text/html");
+        response.getWriter().write("""
+        <!DOCTYPE html>
+        <html>
+        <head><title>Payment Success</title></head>
+        <body style="text-align:center; font-family:Arial, sans-serif; margin-top:50px;">
+            <h2 style="color:green;">Your payment was successful!</h2>
+            <p>You can safely close this tab.</p>
+            <script>
+                // Try to auto-close after 1s
+                setTimeout(() => window.close(), 1000);
+            </script>
+        </body>
+        </html>
+    """);
     }
+
 
 
 
