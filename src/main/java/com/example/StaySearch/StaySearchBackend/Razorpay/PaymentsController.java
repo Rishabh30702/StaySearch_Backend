@@ -106,34 +106,49 @@ public class PaymentsController {
         }
     }
 
+    @GetMapping("/get-latest-payment")
+    public ResponseEntity<?> getLatestPayment(@RequestParam String orderId) {
+        try {
+            // Use Razorpay Orders API to list payments for this order
+            JsonNode payments = rp.fetchPaymentsForOrder(orderId);
+            if (payments.size() > 0) {
+                JsonNode latestPayment = payments.get(payments.size() - 1);
+                return ResponseEntity.ok(Map.of(
+                        "paymentId", latestPayment.get("id").asText(),
+                        "status", latestPayment.get("status").asText()
+                ));
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "No payments found for this order"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch payment", "details", e.getMessage()));
+        }
+    }
+
 
 
     @PostMapping("/verify-payment-link")
     public ResponseEntity<?> verifyPaymentLink(@RequestBody Map<String, String> req) {
         String orderId = req.get("orderId");
-        String paymentId = req.get("paymentId");
 
-        if (orderId == null || orderId.isBlank() || paymentId == null || paymentId.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Missing orderId or paymentId"));
+        if (orderId == null || orderId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing orderId"));
         }
 
         try {
-            // ✅ Fetch payment details from Razorpay
-            JsonNode payment = rp.fetchPayment(paymentId);
+            JsonNode paymentsResponse = rp.fetchPaymentsForOrder(orderId);
+            JsonNode items = paymentsResponse.get("items");
 
-            String paymentOrderId = payment.get("order_id").asText(); // Razorpay order_id
-            String status = payment.get("status").asText();
-
-            // ✅ Verify this payment actually belongs to the order we are checking
-            if (!orderId.equals(paymentOrderId)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                        "verified", false,
-                        "status", status,
-                        "error", "Payment does not belong to this order"
-                ));
+            if (items == null || items.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("verified", false, "error", "No payments found for order"));
             }
 
-            // ✅ Only confirm booking if payment is captured/paid
+            JsonNode latestPayment = items.get(items.size() - 1);
+            String paymentId = latestPayment.get("id").asText();
+            String status = latestPayment.get("status").asText();
+
             if ("captured".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status)) {
                 bookingService.confirmBooking(orderId, paymentId);
                 return ResponseEntity.ok(Map.of(
@@ -154,7 +169,6 @@ public class PaymentsController {
                     .body(Map.of("error", "Failed to verify payment", "details", e.getMessage()));
         }
     }
-
 
 
 //    @RequestMapping(value = "/callback", method = {RequestMethod.GET, RequestMethod.POST})

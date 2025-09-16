@@ -94,4 +94,10 @@ public class RazorpayClient {
         return resp.getBody();
     }
 
+    public JsonNode fetchPaymentsForOrder(String orderId) {
+        String url = "https://api.razorpay.com/v1/orders/" + orderId + "/payments";
+        ResponseEntity<JsonNode> resp = rest.exchange(url, HttpMethod.GET, new HttpEntity<>(authHeaders()), JsonNode.class);
+        return resp.getBody();
+    }
+
 }
