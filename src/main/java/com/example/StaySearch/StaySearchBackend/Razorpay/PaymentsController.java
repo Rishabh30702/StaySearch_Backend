@@ -118,26 +118,35 @@ public class PaymentsController {
         }
 
         try {
-            // ✅ Fetch payment details from Razorpay using orderId
-            JsonNode payment = rp.fetchPayment(paymentId); // fetch payment details directly
+            // ✅ Fetch payment details from Razorpay
+            JsonNode payment = rp.fetchPayment(paymentId);
 
+            String paymentOrderId = payment.get("order_id").asText(); // Razorpay order_id
             String status = payment.get("status").asText();
 
-            if ("captured".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status)) {
-                // Confirm booking (mark as paid in your DB)
-                bookingService.confirmBooking(orderId, paymentId);
+            // ✅ Verify this payment actually belongs to the order we are checking
+            if (!orderId.equals(paymentOrderId)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                        "verified", false,
+                        "status", status,
+                        "error", "Payment does not belong to this order"
+                ));
+            }
 
+            // ✅ Only confirm booking if payment is captured/paid
+            if ("captured".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status)) {
+                bookingService.confirmBooking(orderId, paymentId);
                 return ResponseEntity.ok(Map.of(
                         "verified", true,
                         "paymentId", paymentId,
                         "status", status
                 ));
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                        "verified", false,
-                        "status", status
-                ));
             }
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "verified", false,
+                    "status", status
+            ));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -145,6 +154,7 @@ public class PaymentsController {
                     .body(Map.of("error", "Failed to verify payment", "details", e.getMessage()));
         }
     }
+
 
 
 //    @RequestMapping(value = "/callback", method = {RequestMethod.GET, RequestMethod.POST})
