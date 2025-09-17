@@ -45,6 +45,9 @@ public class AuthController {
     @Autowired
     private Hotel_Repository hotelRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     @PostMapping("/register")
     public Map<String, Object> register(@RequestBody User user) {
         userService.registerUser(user);
@@ -501,5 +504,39 @@ public class AuthController {
         return ResponseEntity.ok(response); // ✅ return the response with remark
     }
 
+    @GetMapping("/test")
+    public ResponseEntity<String> sendTestEmail() {
+        try {
+            String toEmail = "rishabhsingh30702@gmail.com";
+
+            String subject = "Welcome to Valliento / StaySearch – Test Email";
+
+            String htmlContent = "<!DOCTYPE html>" +
+                    "<html>" +
+                    "<head>" +
+                    "<meta charset='UTF-8'>" +
+                    "<title>Valliento Test Email</title>" +
+                    "</head>" +
+                    "<body style='font-family: Arial, sans-serif; line-height:1.6; color:#333;'>" +
+                    "<div style='max-width:600px; margin:auto; padding:20px; border:1px solid #ddd; border-radius:8px;'>" +
+                    "<h2 style='color:#761461;'>Hello from Valliento / StaySearch!</h2>" +
+                    "<p>This is a test email sent using SendGrid. It is designed to pass spam filters.</p>" +
+                    "<p style='background:#f4f4f4; padding:10px; border-radius:5px;'>You can safely receive this email in your inbox.</p>" +
+                    "<p>Visit our platform: <a href='https://staging.valliento.tech' style='color:#761461;'>StaySearch Dashboard</a></p>" +
+                    "<hr style='border:none; border-top:1px solid #ddd; margin:20px 0;'/>" +
+                    "<p style='font-size:12px; color:gray;'>This is a system-generated test email. Do not reply.</p>" +
+                    "</div>" +
+                    "</body>" +
+                    "</html>";
+
+            // Send email using EmailService
+            emailService.sendEmail(toEmail, subject, htmlContent);
+
+            return ResponseEntity.ok("Test email sent successfully. Check your inbox (or spam folder).");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error sending test email: " + e.getMessage());
+        }
+    }
 
 }
