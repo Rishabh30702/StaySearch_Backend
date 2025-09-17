@@ -79,7 +79,7 @@ public class RazorpayClient {
                 "notify", Map.of("sms", true, "email", true),
                 "notes", notes != null ? notes : Map.of(),
 //                "callback_url", "https://testing.valliento.tech/api/payments/callback",  // ✅ FRONTEND PAGE server
-                "callback_url", "http://localhost:4200/payment-success",  // ✅ FRONTEND PAGE localhost
+                "callback_url", "https://upstdcstaysearch.igiletechnologies.com/payment-success",  // ✅ FRONTEND PAGE localhost
                 "callback_method", "get"  // Razorpay will append payment details as query params
         );
 
