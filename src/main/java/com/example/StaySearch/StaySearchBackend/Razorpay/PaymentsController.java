@@ -45,17 +45,52 @@ public class PaymentsController {
     @Value("${RAZORPAY_WEBHOOK_SECRET}")
     String webhookSecret;
 
+//    @PostMapping("/create-order")
+//    public ResponseEntity<?> createOrder(@RequestBody @Valid Dtos.CreateOrderRequest req) {
+//        JsonNode order = rp.createOrder(req.amountInPaise, Optional.ofNullable(req.currency).orElse("INR"),
+//                req.receipt, req.autoCapture, req.notes);
+//        return ResponseEntity.ok(Map.of(
+//                "orderId", order.get("id").asText(),
+//                "amount", order.get("amount").asLong(),
+//                "currency", order.get("currency").asText(),
+//                "key", keyId
+//        ));
+//    }
+
+
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(@RequestBody @Valid Dtos.CreateOrderRequest req) {
-        JsonNode order = rp.createOrder(req.amountInPaise, Optional.ofNullable(req.currency).orElse("INR"),
-                req.receipt, req.autoCapture, req.notes);
-        return ResponseEntity.ok(Map.of(
-                "orderId", order.get("id").asText(),
-                "amount", order.get("amount").asLong(),
-                "currency", order.get("currency").asText(),
-                "key", keyId
-        ));
+        JsonNode order = rp.createOrder(
+                req.amountInPaise,
+                Optional.ofNullable(req.currency).orElse("INR"),
+                req.receipt,
+                req.autoCapture,
+                req.notes
+        );
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("key_id", keyId);
+        response.put("amount", order.get("amount").asLong());
+        response.put("order_id", order.get("id").asText());
+        response.put("currency", order.get("currency").asText());
+
+        // ✅ Include user + UI details
+        response.put("name", Optional.ofNullable(req.name).orElse("R.S. Group of Industries"));
+        response.put("description", Optional.ofNullable(req.description).orElse("Payment"));
+        response.put("prefill_name", req.prefill_name);
+        response.put("prefill_contact", req.prefill_contact);
+        response.put("prefill_email", req.customerEmail);
+        response.put("callback_url", req.callback_url);
+        response.put("cancel_url", req.cancel_url);
+
+        // ✅ Log all values for traceability
+        System.out.println("---- Razorpay Create Order Log ----");
+        response.forEach((k, v) -> System.out.println("key: " + k + " value: " + v));
+        System.out.println("-----------------------------------");
+
+        return ResponseEntity.ok(response);
     }
+
 
     @PostMapping("/create-payment-link")
     public ResponseEntity<?> createPaymentLink(@RequestBody @Valid Dtos.CreateOrderRequest req) {
@@ -264,16 +299,45 @@ public class PaymentsController {
 
 
 
+//    @PostMapping("/verify")
+//    public ResponseEntity<?> verify(@RequestBody @Valid Dtos.VerifyRequest body) {
+//        String payload = body.razorpay_order_id + "|" + body.razorpay_payment_id;
+//        String expected = HmacUtil.hmacSha256Hex(payload, keySecret);
+//        if (expected.equals(body.razorpay_signature)) {
+//            bookingService.confirmBooking(body.razorpay_order_id, body.razorpay_payment_id);
+//            return ResponseEntity.ok(Map.of("verified", true));
+//        }
+//        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("verified", false));
+//    }
+
     @PostMapping("/verify")
     public ResponseEntity<?> verify(@RequestBody @Valid Dtos.VerifyRequest body) {
         String payload = body.razorpay_order_id + "|" + body.razorpay_payment_id;
         String expected = HmacUtil.hmacSha256Hex(payload, keySecret);
-        if (expected.equals(body.razorpay_signature)) {
+
+        boolean verified = expected.equals(body.razorpay_signature);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("razorpay_order_id", body.razorpay_order_id);
+        response.put("razorpay_payment_id", body.razorpay_payment_id);
+        response.put("razorpay_signature", body.razorpay_signature);
+        response.put("verified", verified);
+
+        if (verified) {
             bookingService.confirmBooking(body.razorpay_order_id, body.razorpay_payment_id);
-            return ResponseEntity.ok(Map.of("verified", true));
+            response.put("status", "success");
+        } else {
+            response.put("status", "failed");
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("verified", false));
+
+        // ✅ Log verification details
+        System.out.println("---- Razorpay Verification Log ----");
+        response.forEach((k, v) -> System.out.println("key: " + k + " value: " + v));
+        System.out.println("-----------------------------------");
+
+        return ResponseEntity.ok(response);
     }
+
 
     @PostMapping(value = "/webhook", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> webhook(
