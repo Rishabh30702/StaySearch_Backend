@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.cloudinary.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -60,37 +61,43 @@ public class PaymentsController {
 
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(@RequestBody @Valid Dtos.CreateOrderRequest req) {
-        JsonNode order = rp.createOrder(
-                req.amountInPaise,
-                Optional.ofNullable(req.currency).orElse("INR"),
-                req.receipt,
-                req.autoCapture,
-                req.notes
-        );
+        try {
+            // Create Razorpay order
+            JsonNode order = rp.createOrder(
+                    req.amountInPaise,
+                    Optional.ofNullable(req.currency).orElse("INR"),
+                    req.receipt,
+                    req.autoCapture,
+                    req.notes
+            );
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("key_id", keyId);
-        response.put("amount", order.get("amount").asLong());
-        response.put("order_id", order.get("id").asText());
-        response.put("currency", order.get("currency").asText());
+            // Use HashMap instead of Map.of()
+            Map<String, Object> response = new HashMap<>();
+            response.put("key_id", keyId);
+            response.put("amount", req.amountInPaise);
+            response.put("currency", req.currency != null ? req.currency : "INR");
+            response.put("order_id", order.get("id").asText());
+            response.put("name", "UPSTDC");
+            response.put("description", "Payment");
+            response.put("prefill_name", req.customerEmail != null ? req.customerEmail.split("@")[0] : "");
+            response.put("prefill_contact", req.customerContact);
+            response.put("prefill_email", req.customerEmail);
+            response.put("callback_url", "https://upstdcstaysearch.igiletechnologies.com/payment-success");
+            response.put("cancel_url", "https://upstdcstaysearch.igiletechnologies.com/payment-fail");
 
-        // ✅ Include user + UI details
-        response.put("name", Optional.ofNullable(req.name).orElse("R.S. Group of Industries"));
-        response.put("description", Optional.ofNullable(req.description).orElse("Payment"));
-        response.put("prefill_name", req.prefill_name);
-        response.put("prefill_contact", req.prefill_contact);
-        response.put("prefill_email", req.customerEmail);
-        response.put("callback_url", req.callback_url);
-        response.put("cancel_url", req.cancel_url);
+            // Optional: Log request
+            System.out.println("===== Razorpay Create Order Request =====");
+            response.forEach((k,v) -> System.out.println(k + ": " + v));
+            System.out.println("==========================================");
 
-        // ✅ Log all values for traceability
-        System.out.println("---- Razorpay Create Order Log ----");
-        response.forEach((k, v) -> System.out.println("key: " + k + " value: " + v));
-        System.out.println("-----------------------------------");
+            return ResponseEntity.ok(response);
 
-        return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to create Razorpay order", "details", e.getMessage()));
+        }
     }
-
 
     @PostMapping("/create-payment-link")
     public ResponseEntity<?> createPaymentLink(@RequestBody @Valid Dtos.CreateOrderRequest req) {
