@@ -20,12 +20,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentsController {
 
     private final RazorpayClient rp;
     private final BookingService bookingService;
+    private static final Logger log = LoggerFactory.getLogger(PaymentsController.class);
 
     @Autowired
     private InvoiceService invoiceService;
@@ -45,74 +49,105 @@ public class PaymentsController {
     @Value("${RAZORPAY_WEBHOOK_SECRET}")
     String webhookSecret;
 
+//    @PostMapping("/create-order")
+//    public ResponseEntity<?> createOrder(@RequestBody @Valid Dtos.CreateOrderRequest req) {
+//        JsonNode order = rp.createOrder(req.amountInPaise, Optional.ofNullable(req.currency).orElse("INR"),
+//                req.receipt, req.autoCapture, req.notes);
+//        return ResponseEntity.ok(Map.of(
+//                "orderId", order.get("id").asText(),
+//                "amount", order.get("amount").asLong(),
+//                "currency", order.get("currency").asText(),
+//                "key", keyId
+//        ));
+//    }
+
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(@RequestBody @Valid Dtos.CreateOrderRequest req) {
-        JsonNode order = rp.createOrder(req.amountInPaise, Optional.ofNullable(req.currency).orElse("INR"),
-                req.receipt, req.autoCapture, req.notes);
-        // Log request
-        RazorpayLog logReq = new RazorpayLog("REQUEST", Map.of(
-                "key_id", keyId,
-                "amount", req.amountInPaise,
-                "receipt", req.receipt,
-                "notes", req.notes,
-                "customerEmail", req.customerEmail,
-                "customerContact", req.customerContact
-        ));
-        System.out.println(logReq);
+        try {
+            log.info("[Razorpay][REQUEST] Create Order: amount={} currency={} receipt={}",
+                    req.amountInPaise, req.currency, req.receipt);
 
-        // Log response
-        RazorpayLog logResp = new RazorpayLog("RESPONSE", Map.of(
-                "razorpay_order_id", order.get("id").asText(),
-                "amount", order.get("amount").asLong(),
-                "currency", order.get("currency").asText()
-        ));
-        System.out.println(logResp);
+            JsonNode order = rp.createOrder(
+                    req.amountInPaise,
+                    Optional.ofNullable(req.currency).orElse("INR"),
+                    req.receipt,
+                    req.autoCapture,
+                    req.notes
+            );
 
-        return ResponseEntity.ok(Map.of(
-                "orderId", order.get("id").asText(),
-                "amount", order.get("amount").asLong(),
-                "currency", order.get("currency").asText(),
-                "key", keyId
-        ));
+            log.info("[Razorpay][RESPONSE] Order created successfully: {}", order.toPrettyString());
+
+            return ResponseEntity.ok(Map.of(
+                    "orderId", order.get("id").asText(),
+                    "amount", order.get("amount").asLong(),
+                    "currency", order.get("currency").asText(),
+                    "key", keyId
+            ));
+        } catch (Exception e) {
+            log.error("[Razorpay][ERROR] Failed to create order: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
     }
 
-    @PostMapping("/create-payment-link")
-    public ResponseEntity<?> createPaymentLink(@RequestBody @Valid Dtos.CreateOrderRequest req) {
-        JsonNode link = rp.createPaymentLink(
-                req.amountInPaise,
-                Optional.ofNullable(req.currency).orElse("INR"),
-                req.customerEmail,
-                req.customerContact,
-                req.receipt,
-                req.notes
-        );
+//    @PostMapping("/create-payment-link")
+//    public ResponseEntity<?> createPaymentLink(@RequestBody @Valid Dtos.CreateOrderRequest req) {
+//        JsonNode link = rp.createPaymentLink(
+//                req.amountInPaise,
+//                Optional.ofNullable(req.currency).orElse("INR"),
+//                req.customerEmail,
+//                req.customerContact,
+//                req.receipt,
+//                req.notes
+//        );
+//
+//        return ResponseEntity.ok(Map.of(
+//                "paymentLinkId", link.get("id").asText(),
+//                "status", link.get("status").asText(),
+//                "shortUrl", link.get("short_url").asText()
+//        ));
+//    }
 
-        // Log request
-        RazorpayLog logReq = new RazorpayLog("REQUEST", Map.of(
-                "key_id", keyId,
-                "amount", req.amountInPaise,
-                "currency", req.currency,
-                "receipt", req.receipt,
-                "customerEmail", req.customerEmail,
-                "customerContact", req.customerContact,
-                "callback_url", "https://lncollege.ac.in/cms/_payment/Razorpay/thanks.php",
-                "cancel_url", "https://lncollege.ac.in/cms/_payment/Razorpay/cancel.php"
-        ));
-        System.out.println(logReq);
+    @PostMapping("/create-payment")
+    public ResponseEntity<?> verifyPayment(@RequestBody Map<String, String> payload) {
+        // Extract fields
+        String paymentId = payload.get("razorpay_payment_id");
+        String orderId   = payload.get("razorpay_order_id");
+        String signature = payload.get("razorpay_signature");
 
-// Log response after API call
-        RazorpayLog logResp = new RazorpayLog("RESPONSE", Map.of(
-                "razorpay_order_id", link.get("id").asText(),
-                "status", link.get("status").asText(),
-                "shortUrl", link.get("short_url").asText()
-        ));
-        System.out.println(logResp);
+        // --- Step 1: Log the incoming request ---
+        log.info("[Razorpay][REQUEST] Verify Payment: orderId={} paymentId={} signature={}",
+                orderId, paymentId, signature);
 
-        return ResponseEntity.ok(Map.of(
-                "paymentLinkId", link.get("id").asText(),
-                "status", link.get("status").asText(),
-                "shortUrl", link.get("short_url").asText()
-        ));
+        // --- Step 2: Validate input ---
+        if (paymentId == null || orderId == null || signature == null) {
+            log.warn("[Razorpay][REQUEST][INVALID] Missing parameters: {}", payload);
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing required parameters"));
+        }
+
+        try {
+            // --- Step 3: Verify signature ---
+            String generated = HmacUtil.hmacSha256Hex(orderId + "|" + paymentId, keySecret);
+            boolean isValid = generated.equals(signature);
+
+            // --- Step 4: Log the verification result ---
+            log.info("[Razorpay][RESPONSE] Signature verification result for order {}: {}", orderId, isValid);
+
+            // --- Step 5: Handle accordingly ---
+            if (isValid) {
+                bookingService.confirmBooking(orderId, paymentId);  // update your booking table or payment status
+
+                log.info("[Razorpay][SUCCESS] Booking confirmed for Order={} Payment={}", orderId, paymentId);
+                return ResponseEntity.ok(Map.of("verified", true, "orderId", orderId, "paymentId", paymentId));
+            } else {
+                log.error("[Razorpay][FAILURE] Invalid signature for Order={} Payment={}", orderId, paymentId);
+                return ResponseEntity.badRequest().body(Map.of("verified", false, "error", "Invalid signature"));
+            }
+
+        } catch (Exception e) {
+            // --- Step 6: Catch & log any runtime error ---
+            log.error("[Razorpay][ERROR] Payment verification failed: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/check-payment-status/{paymentId}")
@@ -168,39 +203,87 @@ public class PaymentsController {
 
 
 
+//    @PostMapping("/verify-payment-link")
+//    public ResponseEntity<?> verifyPaymentLink(@RequestBody Map<String, String> req) {
+//        String orderId = req.get("orderId");
+//
+//        if (orderId == null || orderId.isBlank()) {
+//            return ResponseEntity.badRequest().body(Map.of("error", "Missing orderId"));
+//        }
+//
+//        try {
+//            JsonNode paymentsResponse = rp.fetchPaymentsForOrder(orderId);
+//            JsonNode items = paymentsResponse.get("items");
+//
+//            if (items == null || items.isEmpty()) {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                        .body(Map.of("verified", false, "error", "No payments found for order"));
+//            }
+//
+//            JsonNode latestPayment = items.get(items.size() - 1);
+//            String paymentId = latestPayment.get("id").asText();
+//            String status = latestPayment.get("status").asText();
+//
+//            if ("captured".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status)) {
+//                bookingService.confirmBooking(orderId, paymentId);
+//                return ResponseEntity.ok(Map.of(
+//                        "verified", true,
+//                        "paymentId", paymentId,
+//                        "status", status
+//                ));
+//            }
+//
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+//                    "verified", false,
+//                    "status", status
+//            ));
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to verify payment", "details", e.getMessage()));
+//        }
+//    }
+
+
     @PostMapping("/verify-payment-link")
-    public ResponseEntity<?> verifyPaymentLink(@RequestBody Map<String, String> req,
-                                               @RequestBody @Valid Dtos.VerifyRequest body) {
-
-        // Log request
-        RazorpayLog logReq = new RazorpayLog("REQUEST", Map.of(
-                "razorpay_order_id", body.razorpay_order_id,
-                "razorpay_payment_id", body.razorpay_payment_id,
-                "razorpay_signature", body.razorpay_signature
-        ));
-        System.out.println(logReq);
-
+    public ResponseEntity<?> verifyPaymentLink(@RequestBody Map<String, String> req) {
         String orderId = req.get("orderId");
 
+        // --- Step 1: Log incoming request ---
+        log.info("[Razorpay][REQUEST] Verify Payment Link: orderId={}", orderId);
+
+        // --- Step 2: Validate request ---
         if (orderId == null || orderId.isBlank()) {
+            log.warn("[Razorpay][INVALID] Missing orderId in request payload: {}", req);
             return ResponseEntity.badRequest().body(Map.of("error", "Missing orderId"));
         }
 
         try {
+            // --- Step 3: Fetch payment details from Razorpay ---
             JsonNode paymentsResponse = rp.fetchPaymentsForOrder(orderId);
+            log.info("[Razorpay][RESPONSE] Payments API raw response: {}", paymentsResponse.toPrettyString());
+
             JsonNode items = paymentsResponse.get("items");
 
             if (items == null || items.isEmpty()) {
+                log.warn("[Razorpay][RESPONSE] No payments found for orderId={}", orderId);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("verified", false, "error", "No payments found for order"));
             }
 
+            // --- Step 4: Check latest payment ---
             JsonNode latestPayment = items.get(items.size() - 1);
             String paymentId = latestPayment.get("id").asText();
             String status = latestPayment.get("status").asText();
 
+            log.info("[Razorpay][PAYMENT] Latest paymentId={} status={} for orderId={}", paymentId, status, orderId);
+
+            // --- Step 5: Confirm booking if payment captured/paid ---
             if ("captured".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status)) {
                 bookingService.confirmBooking(orderId, paymentId);
+                log.info("[Razorpay][SUCCESS] Booking confirmed for Order={} Payment={} Status={}", orderId, paymentId, status);
+
                 return ResponseEntity.ok(Map.of(
                         "verified", true,
                         "paymentId", paymentId,
@@ -208,17 +291,21 @@ public class PaymentsController {
                 ));
             }
 
+            // --- Step 6: Payment not completed yet ---
+            log.warn("[Razorpay][PENDING] Payment not captured for Order={} CurrentStatus={}", orderId, status);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                     "verified", false,
                     "status", status
             ));
 
         } catch (Exception e) {
-            e.printStackTrace();
+            // --- Step 7: Exception handling ---
+            log.error("[Razorpay][ERROR] Failed to verify payment link for Order={} : {}", orderId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to verify payment", "details", e.getMessage()));
         }
     }
+
 
 
 //    @RequestMapping(value = "/callback", method = {RequestMethod.GET, RequestMethod.POST})
