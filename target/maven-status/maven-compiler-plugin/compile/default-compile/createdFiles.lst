@@ -4,6 +4,7 @@ com\example\StaySearch\StaySearchBackend\Hotels\RoomRequset.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\HomepageBanner.class
 com\example\StaySearch\StaySearchBackend\Exception\ResourceNotFoundException.class
 com\example\StaySearch\StaySearchBackend\Razorpay\PaymentsController.class
+com\example\StaySearch\StaySearchBackend\Razorpay\RazorpayLog.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\HDFC\HdfcEncryptionUtil.class
 com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Service.class
 com\example\StaySearch\StaySearchBackend\CommercialAndOffers\OfferController.class

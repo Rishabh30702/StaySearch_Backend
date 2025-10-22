@@ -49,6 +49,25 @@ public class PaymentsController {
     public ResponseEntity<?> createOrder(@RequestBody @Valid Dtos.CreateOrderRequest req) {
         JsonNode order = rp.createOrder(req.amountInPaise, Optional.ofNullable(req.currency).orElse("INR"),
                 req.receipt, req.autoCapture, req.notes);
+        // Log request
+        RazorpayLog logReq = new RazorpayLog("REQUEST", Map.of(
+                "key_id", keyId,
+                "amount", req.amountInPaise,
+                "receipt", req.receipt,
+                "notes", req.notes,
+                "customerEmail", req.customerEmail,
+                "customerContact", req.customerContact
+        ));
+        System.out.println(logReq);
+
+        // Log response
+        RazorpayLog logResp = new RazorpayLog("RESPONSE", Map.of(
+                "razorpay_order_id", order.get("id").asText(),
+                "amount", order.get("amount").asLong(),
+                "currency", order.get("currency").asText()
+        ));
+        System.out.println(logResp);
+
         return ResponseEntity.ok(Map.of(
                 "orderId", order.get("id").asText(),
                 "amount", order.get("amount").asLong(),
@@ -67,6 +86,27 @@ public class PaymentsController {
                 req.receipt,
                 req.notes
         );
+
+        // Log request
+        RazorpayLog logReq = new RazorpayLog("REQUEST", Map.of(
+                "key_id", keyId,
+                "amount", req.amountInPaise,
+                "currency", req.currency,
+                "receipt", req.receipt,
+                "customerEmail", req.customerEmail,
+                "customerContact", req.customerContact,
+                "callback_url", "https://lncollege.ac.in/cms/_payment/Razorpay/thanks.php",
+                "cancel_url", "https://lncollege.ac.in/cms/_payment/Razorpay/cancel.php"
+        ));
+        System.out.println(logReq);
+
+// Log response after API call
+        RazorpayLog logResp = new RazorpayLog("RESPONSE", Map.of(
+                "razorpay_order_id", link.get("id").asText(),
+                "status", link.get("status").asText(),
+                "shortUrl", link.get("short_url").asText()
+        ));
+        System.out.println(logResp);
 
         return ResponseEntity.ok(Map.of(
                 "paymentLinkId", link.get("id").asText(),
@@ -129,7 +169,17 @@ public class PaymentsController {
 
 
     @PostMapping("/verify-payment-link")
-    public ResponseEntity<?> verifyPaymentLink(@RequestBody Map<String, String> req) {
+    public ResponseEntity<?> verifyPaymentLink(@RequestBody Map<String, String> req,
+                                               @RequestBody @Valid Dtos.VerifyRequest body) {
+
+        // Log request
+        RazorpayLog logReq = new RazorpayLog("REQUEST", Map.of(
+                "razorpay_order_id", body.razorpay_order_id,
+                "razorpay_payment_id", body.razorpay_payment_id,
+                "razorpay_signature", body.razorpay_signature
+        ));
+        System.out.println(logReq);
+
         String orderId = req.get("orderId");
 
         if (orderId == null || orderId.isBlank()) {
