@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -246,21 +247,105 @@ public class PaymentsController {
 //    }
 
 
-    @PostMapping("/verify-payment-link")
-    public ResponseEntity<?> verifyPaymentLink(@RequestBody Map<String, String> req) {
+//    @PostMapping("/verify-payment-link")
+//    public ResponseEntity<?> verifyPaymentLink(@RequestParam Map<String, String> req) {
+//        try {
+//            String orderId = req.get("razorpay_order_id");
+//            String paymentId = req.get("razorpay_payment_id");
+//            String signature = req.get("razorpay_signature");
+//
+//            // 🔹 Log incoming data for debugging
+//            log.info("[Razorpay][REQUEST] Verify Payment Link: orderId={} paymentId={} signature={}",
+//                    orderId, paymentId, signature);
+//
+//            // 🔹 Case 1: If Razorpay sent direct verification fields
+//            if (orderId != null && paymentId != null && signature != null) {
+//                try {
+//                    // Generate HMAC SHA256 signature using your keySecret
+//                    String generated = HmacUtil.hmacSha256Hex(orderId + "|" + paymentId, keySecret);
+//                    boolean isValid = generated.equals(signature);
+//
+//                    log.info("[Razorpay][RESPONSE] Signature valid: {}", isValid);
+//
+//                    if (isValid) {
+//                        bookingService.confirmBooking(orderId, paymentId);
+//                        return ResponseEntity.ok(Map.of(
+//                                "verified", true,
+//                                "paymentId", paymentId,
+//                                "orderId", orderId,
+//                                "source", "direct"
+//                        ));
+//                    } else {
+//                        return ResponseEntity.badRequest().body(Map.of(
+//                                "verified", false,
+//                                "error", "Invalid signature",
+//                                "orderId", orderId
+//                        ));
+//                    }
+//                } catch (Exception ex) {
+//                    log.error("[Razorpay][ERROR] Signature validation failed: {}", ex.getMessage(), ex);
+//                    return ResponseEntity.internalServerError().body(Map.of(
+//                            "error", "Signature validation failed",
+//                            "details", ex.getMessage()
+//                    ));
+//                }
+//            }
+//
+//            // 🔹 Case 2: Fallback to your old logic (for backward compatibility)
+//            String legacyOrderId = req.get("orderId");
+//            if (legacyOrderId == null || legacyOrderId.isBlank()) {
+//                return ResponseEntity.badRequest().body(Map.of("error", "Missing orderId"));
+//            }
+//
+//            JsonNode paymentsResponse = rp.fetchPaymentsForOrder(legacyOrderId);
+//            JsonNode items = paymentsResponse.get("items");
+//
+//            if (items == null || items.isEmpty()) {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                        .body(Map.of("verified", false, "error", "No payments found for order"));
+//            }
+//
+//            JsonNode latestPayment = items.get(items.size() - 1);
+//            String latestPaymentId = latestPayment.get("id").asText();
+//            String status = latestPayment.get("status").asText();
+//
+//            if ("captured".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status)) {
+//                bookingService.confirmBooking(legacyOrderId, latestPaymentId);
+//                return ResponseEntity.ok(Map.of(
+//                        "verified", true,
+//                        "paymentId", latestPaymentId,
+//                        "status", status,
+//                        "source", "legacy"
+//                ));
+//            }
+//
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+//                    "verified", false,
+//                    "status", status,
+//                    "source", "legacy"
+//            ));
+//
+//        } catch (Exception e) {
+//            log.error("[Razorpay][ERROR] Verify Payment Link failed: {}", e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to verify payment", "details", e.getMessage()));
+//        }
+//    }
+
+    @PostMapping(value = "/verify-payment-link", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public ResponseEntity<?> verifyPaymentLink(@RequestParam MultiValueMap<String, String> formData) {
         try {
-            String orderId = req.get("razorpay_order_id");
-            String paymentId = req.get("razorpay_payment_id");
-            String signature = req.get("razorpay_signature");
+            String orderId = formData.getFirst("razorpay_order_id");
+            String paymentId = formData.getFirst("razorpay_payment_id");
+            String signature = formData.getFirst("razorpay_signature");
 
             // 🔹 Log incoming data for debugging
             log.info("[Razorpay][REQUEST] Verify Payment Link: orderId={} paymentId={} signature={}",
                     orderId, paymentId, signature);
 
-            // 🔹 Case 1: If Razorpay sent direct verification fields
+            // 🔹 Case 1: Direct fields from Razorpay callback
             if (orderId != null && paymentId != null && signature != null) {
                 try {
-                    // Generate HMAC SHA256 signature using your keySecret
                     String generated = HmacUtil.hmacSha256Hex(orderId + "|" + paymentId, keySecret);
                     boolean isValid = generated.equals(signature);
 
@@ -290,8 +375,8 @@ public class PaymentsController {
                 }
             }
 
-            // 🔹 Case 2: Fallback to your old logic (for backward compatibility)
-            String legacyOrderId = req.get("orderId");
+            // 🔹 Case 2: Fallback (manual verify if no direct fields)
+            String legacyOrderId = formData.getFirst("orderId");
             if (legacyOrderId == null || legacyOrderId.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Missing orderId"));
             }
@@ -330,6 +415,7 @@ public class PaymentsController {
                     .body(Map.of("error", "Failed to verify payment", "details", e.getMessage()));
         }
     }
+
 
 
 
