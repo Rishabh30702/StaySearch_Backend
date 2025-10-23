@@ -247,130 +247,130 @@ public class PaymentsController {
 //    }
 
 
-//    @PostMapping("/verify-payment-link")
-//    public ResponseEntity<?> verifyPaymentLink(@RequestParam Map<String, String> req) {
-//        try {
-//            String orderId = req.get("razorpay_order_id");
-//            String paymentId = req.get("razorpay_payment_id");
-//            String signature = req.get("razorpay_signature");
-//
-//            // 🔹 Log incoming data for debugging
-//            log.info("[Razorpay][REQUEST] Verify Payment Link: orderId={} paymentId={} signature={}",
-//                    orderId, paymentId, signature);
-//
-//            // 🔹 Case 1: If Razorpay sent direct verification fields
-//            if (orderId != null && paymentId != null && signature != null) {
-//                try {
-//                    // Generate HMAC SHA256 signature using your keySecret
-//                    String generated = HmacUtil.hmacSha256Hex(orderId + "|" + paymentId, keySecret);
-//                    boolean isValid = generated.equals(signature);
-//
-//                    log.info("[Razorpay][RESPONSE] Signature valid: {}", isValid);
-//
-//                    if (isValid) {
-//                        bookingService.confirmBooking(orderId, paymentId);
-//                        return ResponseEntity.ok(Map.of(
-//                                "verified", true,
-//                                "paymentId", paymentId,
-//                                "orderId", orderId,
-//                                "source", "direct"
-//                        ));
-//                    } else {
-//                        return ResponseEntity.badRequest().body(Map.of(
-//                                "verified", false,
-//                                "error", "Invalid signature",
-//                                "orderId", orderId
-//                        ));
-//                    }
-//                } catch (Exception ex) {
-//                    log.error("[Razorpay][ERROR] Signature validation failed: {}", ex.getMessage(), ex);
-//                    return ResponseEntity.internalServerError().body(Map.of(
-//                            "error", "Signature validation failed",
-//                            "details", ex.getMessage()
-//                    ));
-//                }
-//            }
-//
-//            // 🔹 Case 2: Fallback to your old logic (for backward compatibility)
-//            String legacyOrderId = req.get("orderId");
-//            if (legacyOrderId == null || legacyOrderId.isBlank()) {
-//                return ResponseEntity.badRequest().body(Map.of("error", "Missing orderId"));
-//            }
-//
-//            JsonNode paymentsResponse = rp.fetchPaymentsForOrder(legacyOrderId);
-//            JsonNode items = paymentsResponse.get("items");
-//
-//            if (items == null || items.isEmpty()) {
-//                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//                        .body(Map.of("verified", false, "error", "No payments found for order"));
-//            }
-//
-//            JsonNode latestPayment = items.get(items.size() - 1);
-//            String latestPaymentId = latestPayment.get("id").asText();
-//            String status = latestPayment.get("status").asText();
-//
-//            if ("captured".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status)) {
-//                bookingService.confirmBooking(legacyOrderId, latestPaymentId);
-//                return ResponseEntity.ok(Map.of(
-//                        "verified", true,
-//                        "paymentId", latestPaymentId,
-//                        "status", status,
-//                        "source", "legacy"
-//                ));
-//            }
-//
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-//                    "verified", false,
-//                    "status", status,
-//                    "source", "legacy"
-//            ));
-//
-//        } catch (Exception e) {
-//            log.error("[Razorpay][ERROR] Verify Payment Link failed: {}", e.getMessage(), e);
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(Map.of("error", "Failed to verify payment", "details", e.getMessage()));
-//        }
-//    }
-
     @PostMapping("/verify-payment-link")
-    public ResponseEntity<?> verifyPaymentLink(@RequestBody Map<String, String> req) {
+    public ResponseEntity<?> verifyPaymentLink(@RequestParam Map<String, String> req) {
         try {
             String orderId = req.get("razorpay_order_id");
             String paymentId = req.get("razorpay_payment_id");
             String signature = req.get("razorpay_signature");
 
+            // 🔹 Log incoming data for debugging
             log.info("[Razorpay][REQUEST] Verify Payment Link: orderId={} paymentId={} signature={}",
                     orderId, paymentId, signature);
 
+            // 🔹 Case 1: If Razorpay sent direct verification fields
             if (orderId != null && paymentId != null && signature != null) {
-                String generated = HmacUtil.hmacSha256Hex(orderId + "|" + paymentId, keySecret);
-                boolean isValid = generated.equals(signature);
-                log.info("[Razorpay][RESPONSE] Signature valid: {}", isValid);
+                try {
+                    // Generate HMAC SHA256 signature using your keySecret
+                    String generated = HmacUtil.hmacSha256Hex(orderId + "|" + paymentId, keySecret);
+                    boolean isValid = generated.equals(signature);
 
-                if (isValid) {
-                    bookingService.confirmBooking(orderId, paymentId);
-                    return ResponseEntity.ok(Map.of(
-                            "verified", true,
-                            "paymentId", paymentId,
-                            "orderId", orderId,
-                            "source", "direct"
-                    ));
-                } else {
-                    return ResponseEntity.badRequest().body(Map.of(
-                            "verified", false,
-                            "error", "Invalid signature",
-                            "orderId", orderId
+                    log.info("[Razorpay][RESPONSE] Signature valid: {}", isValid);
+
+                    if (isValid) {
+                        bookingService.confirmBooking(orderId, paymentId);
+                        return ResponseEntity.ok(Map.of(
+                                "verified", true,
+                                "paymentId", paymentId,
+                                "orderId", orderId,
+                                "source", "direct"
+                        ));
+                    } else {
+                        return ResponseEntity.badRequest().body(Map.of(
+                                "verified", false,
+                                "error", "Invalid signature",
+                                "orderId", orderId
+                        ));
+                    }
+                } catch (Exception ex) {
+                    log.error("[Razorpay][ERROR] Signature validation failed: {}", ex.getMessage(), ex);
+                    return ResponseEntity.internalServerError().body(Map.of(
+                            "error", "Signature validation failed",
+                            "details", ex.getMessage()
                     ));
                 }
             }
 
-            return ResponseEntity.badRequest().body(Map.of("error", "Missing Razorpay fields"));
+            // 🔹 Case 2: Fallback to your old logic (for backward compatibility)
+            String legacyOrderId = req.get("orderId");
+            if (legacyOrderId == null || legacyOrderId.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Missing orderId"));
+            }
+
+            JsonNode paymentsResponse = rp.fetchPaymentsForOrder(legacyOrderId);
+            JsonNode items = paymentsResponse.get("items");
+
+            if (items == null || items.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("verified", false, "error", "No payments found for order"));
+            }
+
+            JsonNode latestPayment = items.get(items.size() - 1);
+            String latestPaymentId = latestPayment.get("id").asText();
+            String status = latestPayment.get("status").asText();
+
+            if ("captured".equalsIgnoreCase(status) || "paid".equalsIgnoreCase(status)) {
+                bookingService.confirmBooking(legacyOrderId, latestPaymentId);
+                return ResponseEntity.ok(Map.of(
+                        "verified", true,
+                        "paymentId", latestPaymentId,
+                        "status", status,
+                        "source", "legacy"
+                ));
+            }
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "verified", false,
+                    "status", status,
+                    "source", "legacy"
+            ));
+
         } catch (Exception e) {
             log.error("[Razorpay][ERROR] Verify Payment Link failed: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to verify payment", "details", e.getMessage()));
         }
     }
+
+//    @PostMapping("/verify-payment-link")
+//    public ResponseEntity<?> verifyPaymentLink(@RequestBody Map<String, String> req) {
+//        try {
+//            String orderId = req.get("razorpay_order_id");
+//            String paymentId = req.get("razorpay_payment_id");
+//            String signature = req.get("razorpay_signature");
+//
+//            log.info("[Razorpay][REQUEST] Verify Payment Link: orderId={} paymentId={} signature={}",
+//                    orderId, paymentId, signature);
+//
+//            if (orderId != null && paymentId != null && signature != null) {
+//                String generated = HmacUtil.hmacSha256Hex(orderId + "|" + paymentId, keySecret);
+//                boolean isValid = generated.equals(signature);
+//                log.info("[Razorpay][RESPONSE] Signature valid: {}", isValid);
+//
+//                if (isValid) {
+//                    bookingService.confirmBooking(orderId, paymentId);
+//                    return ResponseEntity.ok(Map.of(
+//                            "verified", true,
+//                            "paymentId", paymentId,
+//                            "orderId", orderId,
+//                            "source", "direct"
+//                    ));
+//                } else {
+//                    return ResponseEntity.badRequest().body(Map.of(
+//                            "verified", false,
+//                            "error", "Invalid signature",
+//                            "orderId", orderId
+//                    ));
+//                }
+//            }
+//
+//            return ResponseEntity.badRequest().body(Map.of("error", "Missing Razorpay fields"));
+//        } catch (Exception e) {
+//            log.error("[Razorpay][ERROR] Verify Payment Link failed: {}", e.getMessage(), e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to verify payment", "details", e.getMessage()));
+//        }
+//    }
 
 
 //    @RequestMapping(value = "/callback", method = {RequestMethod.GET, RequestMethod.POST})
