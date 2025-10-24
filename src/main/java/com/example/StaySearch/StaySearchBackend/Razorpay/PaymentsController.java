@@ -246,22 +246,77 @@ public class PaymentsController {
 //        }
 //    }
 
+    @PostMapping("/get-payment-details")
+    public ResponseEntity<?> getPaymentDetails(@RequestBody Map<String, String> req) {
+        String orderId = req.get("orderId");
+
+        if (orderId == null || orderId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing orderId"));
+        }
+
+        try {
+            // Fetch payments associated with this order from Razorpay
+            JsonNode paymentsResponse = rp.fetchPaymentsForOrder(orderId);
+            JsonNode items = paymentsResponse.get("items");
+
+            if (items == null || items.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "No payments found for this order"));
+            }
+
+            // Take the latest payment
+            JsonNode latestPayment = items.get(items.size() - 1);
+            String paymentId = latestPayment.get("id").asText();
+            String status = latestPayment.get("status").asText();
+
+            // Only return if payment is captured/paid
+            if (!"captured".equalsIgnoreCase(status) && !"paid".equalsIgnoreCase(status)) {
+                return ResponseEntity.status(HttpStatus.ACCEPTED)
+                        .body(Map.of("error", "Payment not captured yet", "status", status));
+            }
+
+            // Generate signature for frontend verification (order_id|payment_id)
+            String signature = HmacUtil.hmacSha256Hex(orderId + "|" + paymentId, keySecret);
+
+            // Optional: Log the details
+            System.out.println("-------------------------------------------------------------");
+            System.out.println("[Razorpay][PAYMENT DETAILS] Order: " + orderId);
+            System.out.println("Payment ID: " + paymentId);
+            System.out.println("Signature: " + signature);
+            System.out.println("-------------------------------------------------------------");
+
+            // Return credentials to frontend
+            return ResponseEntity.ok(Map.of(
+                    "razorpay_order_id", orderId,
+                    "razorpay_payment_id", paymentId,
+                    "razorpay_signature", signature,
+                    "status", status
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch payment details", "details", e.getMessage()));
+        }
+    }
+
+
 
     @PostMapping("/verify-payment-link")
-    public ResponseEntity<?> verifyPaymentLink(@RequestBody Map<String, String> req) {
+    public ResponseEntity<?> verifyPaymentLink(@RequestBody Map<String, String> payload) {
         try {
-            // 🔹 Extract Razorpay fields
-            String orderId   = req.get("razorpay_order_id");
-            String paymentId = req.get("razorpay_payment_id");
-            String signature = req.get("razorpay_signature");
+            // 🔹 Extract Razorpay fields from frontend payload
+            String orderId   = payload.get("razorpay_order_id");
+            String paymentId = payload.get("razorpay_payment_id");
+            String signature = payload.get("razorpay_signature");
 
-            // 🔹 Extract optional user details (if sent by frontend)
-            String name        = req.get("name");
-            String contact     = req.get("contact");
-            String description = req.get("description");
-            String amount      = req.get("amount");
+            // 🔹 Extract optional user info (if any)
+            String name        = payload.get("name");
+            String contact     = payload.get("contact");
+            String description = payload.get("description");
+            String amount      = payload.get("amount");
 
-            // 🔹 Log full incoming payload for traceability
+            // 🔹 Log full incoming payload
             log.info("-------------------------------------------------------------");
             log.info("[Razorpay][REQUEST] Payment Verification Started");
             log.info("Order ID      : {}", orderId);
@@ -273,24 +328,24 @@ public class PaymentsController {
             log.info("Description   : {}", description);
             log.info("-------------------------------------------------------------");
 
-            // --- Step 1: Validate fields ---
+            // --- Step 1: Validate required fields
             if (orderId == null || paymentId == null || signature == null) {
-                log.warn("[Razorpay][ERROR] Missing required Razorpay fields in verification request.");
+                log.warn("[Razorpay][ERROR] Missing required Razorpay fields.");
                 return ResponseEntity.badRequest().body(Map.of("error", "Missing Razorpay fields"));
             }
 
-            // --- Step 2: Verify signature using HMAC SHA256 ---
-            String generated = HmacUtil.hmacSha256Hex(orderId + "|" + paymentId, keySecret);
-            boolean isValid  = generated.equals(signature);
+            // --- Step 2: Verify signature using HMAC SHA256
+            String generatedSignature = HmacUtil.hmacSha256Hex(orderId + "|" + paymentId, keySecret);
+            boolean isValid = generatedSignature.equals(signature);
 
-            // --- Step 3: Log verification outcome ---
+            // --- Step 3: Handle verification outcome
             if (isValid) {
                 log.info("[Razorpay][VERIFIED] ✅ Signature matched successfully for Order: {}", orderId);
 
-                // Confirm booking or update DB
+                // ✅ Confirm booking / update your DB
                 bookingService.confirmBooking(orderId, paymentId);
 
-                // Log response
+                // 🔹 Log response
                 log.info("[Razorpay][RESPONSE] Payment verification SUCCESSFUL");
                 log.info("Order ID      : {}", orderId);
                 log.info("Payment ID    : {}", paymentId);
@@ -306,7 +361,7 @@ public class PaymentsController {
                 ));
             } else {
                 log.error("[Razorpay][FAILED] ❌ Signature mismatch for Order: {}", orderId);
-                log.error("Expected : {}", generated);
+                log.error("Expected : {}", generatedSignature);
                 log.error("Received : {}", signature);
                 log.info("-------------------------------------------------------------");
 
@@ -320,10 +375,13 @@ public class PaymentsController {
 
         } catch (Exception e) {
             log.error("[Razorpay][ERROR] Payment verification failed: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Failed to verify payment", "details", e.getMessage()));
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "Failed to verify payment",
+                    "details", e.getMessage()
+            ));
         }
     }
+
 
 
 //    @PostMapping("/verify-payment-link")
