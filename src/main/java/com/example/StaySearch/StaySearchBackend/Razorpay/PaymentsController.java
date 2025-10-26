@@ -62,34 +62,6 @@ public class PaymentsController {
 //        ));
 //    }
 
-//    @PostMapping("/create-order")
-//    public ResponseEntity<?> createOrder(@RequestBody @Valid Dtos.CreateOrderRequest req) {
-//        try {
-//            log.info("[Razorpay][REQUEST] Create Order: amount={} currency={} receipt={}",
-//                    req.amountInPaise, req.currency, req.receipt);
-//
-//            JsonNode order = rp.createOrder(
-//                    req.amountInPaise,
-//                    Optional.ofNullable(req.currency).orElse("INR"),
-//                    req.receipt,
-//                    req.autoCapture,
-//                    req.notes
-//            );
-//
-//            log.info("[Razorpay][RESPONSE] Order created successfully: {}", order.toPrettyString());
-//
-//            return ResponseEntity.ok(Map.of(
-//                    "orderId", order.get("id").asText(),
-//                    "amount", order.get("amount").asLong(),
-//                    "currency", order.get("currency").asText(),
-//                    "key", keyId
-//            ));
-//        } catch (Exception e) {
-//            log.error("[Razorpay][ERROR] Failed to create order: {}", e.getMessage(), e);
-//            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
-//        }
-//    }
-
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(@RequestBody @Valid Dtos.CreateOrderRequest req) {
         try {
@@ -106,25 +78,17 @@ public class PaymentsController {
 
             log.info("[Razorpay][RESPONSE] Order created successfully: {}", order.toPrettyString());
 
-            // ✅ Include the new fields in the response
             return ResponseEntity.ok(Map.of(
                     "orderId", order.get("id").asText(),
                     "amount", order.get("amount").asLong(),
                     "currency", order.get("currency").asText(),
-                    "key", req.key_id != null ? req.key_id : keyId,
-                    "name", req.name,
-                    "description", req.description,
-                    "prefill_name", req.prefill_name,
-                    "prefill_contact", req.prefill_contact,
-                    "callback_url", req.callback_url,
-                    "cancel_url", req.cancel_url
+                    "key", keyId
             ));
         } catch (Exception e) {
             log.error("[Razorpay][ERROR] Failed to create order: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
-
 
 //    @PostMapping("/create-payment-link")
 //    public ResponseEntity<?> createPaymentLink(@RequestBody @Valid Dtos.CreateOrderRequest req) {

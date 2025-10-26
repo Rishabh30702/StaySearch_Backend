@@ -15,14 +15,6 @@ public class Dtos {
         public String customerContact;
         public boolean autoCapture = true;
 
-
-        public String key_id;
-        public String name;
-        public String description;
-        public String prefill_name;
-        public String prefill_contact;
-        public String callback_url;
-        public String cancel_url;
     }
 
     public static class VerifyRequest {
