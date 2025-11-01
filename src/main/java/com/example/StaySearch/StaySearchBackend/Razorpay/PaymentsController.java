@@ -1,5 +1,6 @@
 package com.example.StaySearch.StaySearchBackend.Razorpay;
 
+import com.example.StaySearch.StaySearchBackend.PaymentGateway.PaymentGatewaySettingsService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -38,6 +39,9 @@ public class PaymentsController {
     @Autowired
     private InvoiceRepository invoiceRepository;
 
+    @Autowired
+    private PaymentGatewaySettingsService paymentGatewayService;
+
     public PaymentsController(RazorpayClient rp, BookingService bookingService) {
         this.rp = rp;
         this.bookingService = bookingService;
@@ -50,34 +54,60 @@ public class PaymentsController {
     @Value("${RAZORPAY_WEBHOOK_SECRET}")
     String webhookSecret;
 
+//
 //    @PostMapping("/create-order")
 //    public ResponseEntity<?> createOrder(@RequestBody @Valid Dtos.CreateOrderRequest req) {
-//        JsonNode order = rp.createOrder(req.amountInPaise, Optional.ofNullable(req.currency).orElse("INR"),
-//                req.receipt, req.autoCapture, req.notes);
-//        return ResponseEntity.ok(Map.of(
-//                "orderId", order.get("id").asText(),
-//                "amount", order.get("amount").asLong(),
-//                "currency", order.get("currency").asText(),
-//                "key", keyId
-//        ));
+//        try {
+//            log.info("[Razorpay][REQUEST] Create Order: amount={} currency={} receipt={}",
+//                    req.amountInPaise, req.currency, req.receipt);
+//
+//            JsonNode order = rp.createOrder(
+//                    req.amountInPaise,
+//                    Optional.ofNullable(req.currency).orElse("INR"),
+//                    req.receipt,
+//                    req.autoCapture,
+//                    req.notes
+//            );
+//
+//            log.info("[Razorpay][RESPONSE] Order created successfully: {}", order.toPrettyString());
+//
+//            return ResponseEntity.ok(Map.of(
+//                    "orderId", order.get("id").asText(),
+//                    "amount", order.get("amount").asLong(),
+//                    "currency", order.get("currency").asText(),
+//                    "key", keyId
+//            ));
+//        } catch (Exception e) {
+//            log.error("[Razorpay][ERROR] Failed to create order: {}", e.getMessage(), e);
+//            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+//        }
 //    }
+
 
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(@RequestBody @Valid Dtos.CreateOrderRequest req) {
         try {
-            log.info("[Razorpay][REQUEST] Create Order: amount={} currency={} receipt={}",
-                    req.amountInPaise, req.currency, req.receipt);
+            // Step 1: Fetch amount from DB
+            Double amount = paymentGatewayService.getAmount();
+            if (amount == null || amount <= 0) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid or missing amount in DB"));
+            }
 
-            JsonNode order = rp.createOrder(
-                    req.amountInPaise,
-                    Optional.ofNullable(req.currency).orElse("INR"),
-                    req.receipt,
-                    req.autoCapture,
-                    req.notes
-            );
+            long amountInPaise = Math.round(amount * 100);
+            String currency = Optional.ofNullable(req.currency).orElse("INR");
+            String receipt = Optional.ofNullable(req.receipt)
+                    .orElse("RCPT-" + System.currentTimeMillis());
+
+            log.info("[Razorpay][REQUEST] Create Order: amount={} currency={} receipt={}",
+                    amount, currency, receipt);
+
+            // Step 2: Create order on Razorpay
+            JsonNode order = rp.createOrder(amountInPaise, currency, receipt, req.autoCapture, req.notes);
 
             log.info("[Razorpay][RESPONSE] Order created successfully: {}", order.toPrettyString());
 
+            // Step 3: Return data to frontend
             return ResponseEntity.ok(Map.of(
                     "orderId", order.get("id").asText(),
                     "amount", order.get("amount").asLong(),
@@ -89,6 +119,10 @@ public class PaymentsController {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
+
+
+
+
 
 //    @PostMapping("/create-payment-link")
 //    public ResponseEntity<?> createPaymentLink(@RequestBody @Valid Dtos.CreateOrderRequest req) {
