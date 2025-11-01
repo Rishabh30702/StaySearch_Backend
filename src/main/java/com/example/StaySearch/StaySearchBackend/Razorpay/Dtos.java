@@ -6,8 +6,7 @@ import java.util.Map;
 
 public class Dtos {
     public static class CreateOrderRequest {
-        @Min(1)
-        public long amountInPaise;
+        public Long amountInPaise;
         public String currency = "INR";
         public String receipt;
         public Map<String,String> notes;
