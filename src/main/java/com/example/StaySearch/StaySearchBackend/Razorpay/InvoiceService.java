@@ -45,17 +45,22 @@ public class InvoiceService {
     @Value("${sendgrid.from.email}")
     private String fromEmail;
 
-    public void generateAndSendInvoice(String paymentId,
+    public void generateAndSendInvoice(String orderId,
+                                       String paymentId,
                                        String customerEmail,
                                        String hotelName,
                                        long amount,
                                        String customerPhone) {
         try {
+            // Generate invoice (without showing orderId)
             byte[] pdfBytes = generateInvoice(paymentId, customerEmail, hotelName, amount);
 
+            // Upload PDF
             String invoiceUrl = uploadToCloudinary(pdfBytes, paymentId);
 
+            // Save in DB (✅ still storing orderId)
             InvoiceRequest invoice = new InvoiceRequest();
+            invoice.setOrderId(orderId);
             invoice.setPaymentId(paymentId);
             invoice.setCustomerEmail(customerEmail);
             invoice.setCustomerPhone(customerPhone);
@@ -64,6 +69,7 @@ public class InvoiceService {
             invoice.setInvoiceUrl(invoiceUrl);
             invoiceRepository.save(invoice);
 
+            // Send email (✅ no orderId shown)
             sendEmailWithInvoice(customerEmail, pdfBytes, paymentId, amount, hotelName);
 
             System.out.println("[InvoiceService] ✅ Invoice saved, uploaded & sent to " + customerEmail);
@@ -71,7 +77,6 @@ public class InvoiceService {
             e.printStackTrace();
         }
     }
-
 
     private byte[] generateInvoice(String paymentId,
                                    String customerEmail,
@@ -83,19 +88,18 @@ public class InvoiceService {
 
         doc.open();
 
-        // Title
         Font titleFont = new Font(Font.FontFamily.HELVETICA, 20, Font.BOLD, BaseColor.DARK_GRAY);
         Paragraph title = new Paragraph("StaySearch Hotel Booking Invoice", titleFont);
         title.setAlignment(Element.ALIGN_CENTER);
         doc.add(title);
         doc.add(new Paragraph("\n"));
 
-        // Table with invoice details
         PdfPTable table = new PdfPTable(2);
         table.setWidthPercentage(100);
         table.setSpacingBefore(10f);
         table.setSpacingAfter(10f);
 
+        // ✅ No orderId here
         addTableCell(table, "Payment ID:", paymentId);
         addTableCell(table, "Hotel Name:", hotelName);
         addTableCell(table, "Amount Paid:", "₹" + (amount / 100.0));
@@ -148,7 +152,6 @@ public class InvoiceService {
         Content content = new Content("text/html", htmlContent);
         Mail mail = new Mail(from, subject, to, content);
 
-        // ✅ Attach PDF
         Attachments attachments = new Attachments();
         attachments.setContent(Base64.getEncoder().encodeToString(pdfBytes));
         attachments.setType("application/pdf");
@@ -166,6 +169,7 @@ public class InvoiceService {
         System.out.println("Status Code: " + response.getStatusCode());
         System.out.println("Body: " + response.getBody());
     }
+
 
     private String uploadToCloudinary(byte[] pdfBytes, String paymentId) throws Exception {
         Map uploadResult = cloudinary.uploader().upload(

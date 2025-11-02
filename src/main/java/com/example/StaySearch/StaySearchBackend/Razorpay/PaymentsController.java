@@ -664,12 +664,12 @@ public class PaymentsController {
 
     @PostMapping("/invoice")
     public ResponseEntity<?> createInvoice(@RequestBody @Valid InvoiceRequest req) {
-        // ✅ Fetch amount from DB (same as Razorpay createOrder)
-        Double dbAmount = paymentGatewayService.getAmount(); // same method used earlier
-        long amountInPaise = Math.round(dbAmount * 100); // convert to paise
+        Double dbAmount = paymentGatewayService.getAmount();
+        long amountInPaise = Math.round(dbAmount * 100);
 
         invoiceService.generateAndSendInvoice(
-                req.getPaymentId(),          // ✅ only payment ID now
+                req.getOrderId(),          // ✅ we’ll still pass it for DB storage
+                req.getPaymentId(),
                 req.getCustomerEmail(),
                 req.getHotelName(),
                 amountInPaise,
