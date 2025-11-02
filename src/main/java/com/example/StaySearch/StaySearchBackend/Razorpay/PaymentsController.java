@@ -664,14 +664,18 @@ public class PaymentsController {
 
     @PostMapping("/invoice")
     public ResponseEntity<?> createInvoice(@RequestBody @Valid InvoiceRequest req) {
+        // ✅ Fetch amount from DB (same as Razorpay createOrder)
+        Double dbAmount = paymentGatewayService.getAmount(); // same method used earlier
+        long amountInPaise = Math.round(dbAmount * 100); // convert to paise
+
         invoiceService.generateAndSendInvoice(
-                req.getOrderId(),
-                req.getPaymentId(),
+                req.getPaymentId(),          // ✅ only payment ID now
                 req.getCustomerEmail(),
                 req.getHotelName(),
-                req.getAmountInPaise(),
+                amountInPaise,
                 req.getCustomerPhone()
         );
+
         return ResponseEntity.ok(Map.of("success", true, "message", "Invoice generated & sent"));
     }
 
