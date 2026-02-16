@@ -2,15 +2,17 @@ package com.example.StaySearch.StaySearchBackend.PlatformContentUpdate;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.example.StaySearch.StaySearchBackend.Security.XssSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import jakarta.validation.Validator;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+
 
 @RestController
 @RequestMapping("/api/informational-page")
@@ -22,24 +24,41 @@ public class InformationalPageController {
     @Autowired
     private Cloudinary cloudinary;
 
+    @Autowired // 2. Add this annotation
+    private Validator validator;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<InformationalPage> createPage(
+    public ResponseEntity<?> createPage(
             @RequestParam String title,
             @RequestParam String content,
             @RequestParam MultipartFile image
-    ) throws IOException {
+    ) {
+        try {
+            // Step 1: Sanitize (removes tags, leaves keywords)
+            String safeTitle = XssSanitizer.sanitize(title);
+            String safeContent = XssSanitizer.sanitize(content);
 
-        String imageUrl = cloudinary.uploader().upload(image.getBytes(), ObjectUtils.emptyMap())
-                .get("url").toString();
+            InformationalPage page = new InformationalPage();
+            page.setTitle(safeTitle);
+            page.setContent(safeContent);
 
-        InformationalPage page = new InformationalPage();
-        page.setTitle(title);
-        page.setContent(content);
-        page.setImageUrl(imageUrl);
+            // Step 2: Manually Run Validator
+            // This checks the safeTitle against our new Hardened Regex
+            var violations = validator.validate(page);
+            if (!violations.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body("Security Violation: " + violations.iterator().next().getMessage());
+            }
 
-        return ResponseEntity.ok(repository.save(page));
+            // Step 3: Save only if clean
+            return ResponseEntity.ok(repository.save(page));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
     }
+
+
     @GetMapping
     public ResponseEntity<List<InformationalPage>> getAllPages() {
         return ResponseEntity.ok(repository.findAll());

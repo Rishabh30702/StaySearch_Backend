@@ -1,6 +1,9 @@
 package com.example.StaySearch.StaySearchBackend.PlatformContentUpdate;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "homepagebanner")
@@ -9,7 +12,15 @@ public class HomepageBanner {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Title is required")
+    // Restricting to 3-50 characters to prevent database bloat or UI breaking
+    @Size(min = 3, max = 50, message = "Title must be between 3 and 50 characters")
+    // Optional: Allow only alphanumeric, spaces, and basic punctuation
+    @Pattern(regexp = "^[a-zA-Z0-20\\s.,!'-]*$", message = "Title contains illegal characters")
     private String title;
+
+    @NotBlank(message = "Image URL is required")
+    @Size(max = 255, message = "URL is too long")
     private String imageUrl;
 
     public HomepageBanner(Long id, String title, String imageUrl) {

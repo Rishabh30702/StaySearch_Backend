@@ -23,6 +23,7 @@ D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\Sta
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Service.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\HotelierController.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\HotelierService.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\HotelUpdateDTO.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\Room.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\RoomRepository.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Hotels\RoomRequset.java
@@ -66,4 +67,6 @@ D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\Sta
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Razorpay\PaymentsController.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Razorpay\RazorpayClient.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Razorpay\RazorpayLog.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Security\RateLimitingService.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\Security\XssSanitizer.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\StaySearchBackendApplication.java

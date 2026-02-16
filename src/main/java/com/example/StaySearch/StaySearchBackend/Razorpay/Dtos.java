@@ -6,14 +6,14 @@ import java.util.Map;
 
 public class Dtos {
     public static class CreateOrderRequest {
-        public Long amountInPaise;
+        @Min(1)
+        public long amountInPaise;
         public String currency = "INR";
         public String receipt;
         public Map<String,String> notes;
         public String customerEmail;
         public String customerContact;
         public boolean autoCapture = true;
-
     }
 
     public static class VerifyRequest {

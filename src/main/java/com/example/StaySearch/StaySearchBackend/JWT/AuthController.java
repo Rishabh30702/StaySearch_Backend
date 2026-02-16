@@ -3,14 +3,23 @@ package com.example.StaySearch.StaySearchBackend.JWT;
 
 import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Entity;
 import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Repository;
+import com.example.StaySearch.StaySearchBackend.Security.RateLimitingService;
+import com.example.StaySearch.StaySearchBackend.Security.XssSanitizer;
+import io.github.bucket4j.Bucket;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -25,10 +34,12 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin("*")
 public class AuthController {
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private RateLimitingService rateLimitingService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -45,29 +56,107 @@ public class AuthController {
     @Autowired
     private Hotel_Repository hotelRepository;
 
-    @Autowired
-    private EmailService emailService;
-
     @PostMapping("/register")
-    public Map<String, Object> register(@RequestBody User user) {
+    public ResponseEntity<Map<String, Object>> register(@Valid @RequestBody RegisterRequest request) {
+
+        // Create a clean User entity (Prevents Mass Assignment)
+        User user = new User();
+        user.setUsername(sanitize(request.getUsername()));
+        user.setPassword(request.getPassword()); // Service must hash this!
+
+
+        // FORCE ROLE TO 'USER' - Even if they try to send 'ADMIN' in JSON
+        user.setRole("USER");
+
         userService.registerUser(user);
+
         String token = jwtUtil.generateToken(user.getUsername());
+
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "User registered successfully");
+
         response.put("token", token);
-        return response;
+
+        // Check the flag from the service
+        if (userService.isLastMailFailed()) {
+            response.put("message", "User registered, but welcome email failed.");
+        } else {
+            response.put("message", "User registered successfully!");
+        }
+
+        return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/normallogin")
-    public Map<String, Object> Normallogin(@RequestBody User user) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
+    private String sanitize(String input) {
+        if (input == null) return null;
+        return input.replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll("'", "&#39;")
+                .replaceAll("\"", "&quot;");
+    }
 
-        String token = jwtUtil.generateToken(user.getUsername());
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Login successful");
-        response.put("token", token);
-        return response;
+
+
+    public static class RegisterRequest {
+        @NotBlank
+        @Pattern(
+                regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$",
+                message = "Please provide a valid email address"
+        )
+        @Size(min = 5, max = 100, message = "Username must be between 5 and 100 characters")
+        private String username;
+
+        @NotBlank
+        @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")
+        private String password;
+
+
+
+
+        // Standard Getters and Setters are MANDATORY for Jackson
+        public String getUsername() { return username; }
+
+        public String getPassword() { return password; }
+
+
+
+
+    }
+
+
+
+
+
+    @PostMapping("/normallogin")
+    public ResponseEntity<?> normalLogin(@RequestBody User user, HttpServletRequest request) {
+        // 🛡️ 1. Rate Limiting Check (Security Audit Requirement)
+        String ip = request.getRemoteAddr();
+        Bucket bucket = rateLimitingService.resolveBucket(ip);
+
+        if (!bucket.tryConsume(1)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(Map.of("message", "Too many login attempts. Please try again in 20 minutes."));
+        }
+
+        try {
+            // 🛡️ 2. Authentication (Spring Security)
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
+
+            // 🛡️ 3. Token Generation
+            String token = jwtUtil.generateToken(user.getUsername());
+
+            // 🛡️ 4. Success Response
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Login successful");
+            response.put("token", token);
+
+            return ResponseEntity.ok(response);
+
+        } catch (AuthenticationException e) {
+            // 🛡️ 5. Handle Invalid Credentials
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid username or password"));
+        }
     }
 
     @PostMapping("/login")
@@ -76,7 +165,7 @@ public class AuthController {
 
         if (optionalUser.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User not found"));
+                    .body(Map.of("message", "Incorrect Username or Password"));
         }
 
         User dbUser = optionalUser.get();
@@ -123,7 +212,7 @@ public class AuthController {
 
         // Assuming username is unique and corresponds to the user's email
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
         Map<String, Object> response = new HashMap<>();
         response.put("email", user.getUsername());
@@ -147,6 +236,22 @@ public class AuthController {
         List<User> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
+
+
+
+    @GetMapping("/check-username")
+    public ResponseEntity<Map<String, Boolean>> checkUsername(@RequestParam String username) {
+
+        if (username == null || !username.matches("^[a-zA-Z0-9@._\\-]+$")) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        boolean available = !userService.checkUsernameExists(username);
+        return ResponseEntity.ok(Map.of("available", available));
+    }
+
+
+// admin related apis are now protected using req matchers in security config file
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long id) {
         boolean deleted = userService.deleteUserById(id);
@@ -156,7 +261,7 @@ public class AuthController {
             response.put("message", "User deleted successfully.");
             return ResponseEntity.ok(response);
         } else {
-            response.put("message", "User not found.");
+            response.put("message", "Invalid username or password.");
             return ResponseEntity.status(404).body(response);
         }
     }
@@ -173,37 +278,81 @@ public class AuthController {
         String oldPassword = passwordData.get("oldPassword");
         String newPassword = passwordData.get("newPassword");
 
-        boolean isUpdated = userService.updatePassword(username, oldPassword, newPassword);
-        if (isUpdated) {
-            return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
-        } else {
+        try {
+           String isUpdated = userService.updatePassword(username, oldPassword, newPassword);
+            if ("SUCCESS".equals(isUpdated)) {
+                return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", isUpdated));
+            }
+        } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Old password is incorrect."));
+                    .body(Map.of("message", ex.getMessage()));
         }
     }
 
-    @PutMapping("/admin/user/update")
-    public ResponseEntity<?> updateUserDetails(@RequestBody Map<String, String> userData) {
-        String username = userData.get("username");
-        String newPassword = userData.get("newPassword"); // optional
-        String newPhone = userData.get("phone");          // optional
-        String newRole = userData.get("role");            // optional
 
-        if (username == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Username is required."));
-        }
+    @PutMapping("/admin/user/update")
+    public ResponseEntity<?> updateUserDetails(@Valid @RequestBody UpdateUserRequest request) {
+
+        // 1. Manual XSS Sanitization (Primary defense for display data)
+        String safeUsername = sanitize(request.getUsername());
 
         try {
-            boolean isUpdated = userService.updateUserDetails(username, newPassword, newPhone, newRole);
+            boolean isUpdated = userService.updateUserDetails(
+                    safeUsername,
+                    request.getNewPassword(),
+                    request.getPhone(),
+                    request.getRole()
+            );
+
             if (isUpdated) {
-                return ResponseEntity.ok(Map.of("message", "User updated successfully: " + username));
+                return ResponseEntity.ok(Map.of("message", "User updated successfully."));
             } else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("message", "Failed to update user: " + username));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Invalid username or password."));
             }
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", "Internal error occurred during update."));
         }
+    }
+
+
+
+    // 2. The Request Class with Specific Role Whitelisting
+    public static class UpdateUserRequest {
+        @NotBlank(message = "Username is required")
+        @Pattern(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$",
+                message = "Username must be a valid email format")
+        private String username;
+
+        @Size(min = 8, max = 100)
+        @Pattern(
+                regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+                message = "Password does not meet complexity requirements"
+        )
+        private String newPassword;
+
+        @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Invalid phone format")
+        private String phone;
+
+        // ROLE RESTRICTION: Only Admin, admin, USER, or Hotelier allowed.
+        // This stops SQL Keywords (SELECT, EXEC, DECLARE) because they aren't in this list.
+        @Pattern(regexp = "(?i)^(ADMIN|USER|HOTELIER)$",
+                message = "Invalid Role. Only ADMIN, USER, or Hotelier are accepted.")
+        private String role;
+
+        // Getters and Setters
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getNewPassword() { return newPassword; }
+        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+        public String getPhone() { return phone; }
+        public void setPhone(String phone) { this.phone = phone; }
+        public String getRole() { return role; }
+        public void setRole(String role) { this.role = role; }
     }
 
 
@@ -222,7 +371,7 @@ public class AuthController {
         System.out.println("All users in DB: " + userRepository.findAll());
 
         User user = userRepository.findByUsername(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
         Hotel_Entity hotel = hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new RuntimeException("Hotel not found"));
@@ -246,7 +395,7 @@ public class AuthController {
 
         Optional<User> userOptional = userRepository.findByUsername(email);
         if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Invalid username or password"));
         }
 
         User user = userOptional.get();
@@ -266,7 +415,7 @@ public class AuthController {
 
         Optional<User> userOptional = userRepository.findByUsername(email);
         if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Invalid username or password"));
         }
 
         Optional<Hotel_Entity> hotelOptional = hotelRepository.findById(hotelId);
@@ -301,12 +450,24 @@ public class AuthController {
 
             user.setStatus("APPROVED");
             userRepository.save(user);
-            userService.sendHotelierApprovalEmail(user);
-            response.put("message", "Hotelier approved successfully.");
+
+            // 2. Attempt to send email with safety catch
+            try {
+                userService.sendHotelierApprovalEmail(user);
+                response.put("message", "Hotelier approved successfully and notification email sent.");
+            } catch (Exception e) {
+
+                // Inform the Admin that the approval worked, but the mail failed
+                response.put("message", "Hotelier approved successfully, but welcome email could not be sent.");
+            }
+
             return ResponseEntity.ok(response);
+
+
+
         }
 
-        response.put("message", "User not found.");
+        response.put("message", "Invalid username or passowrd.");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
@@ -376,13 +537,14 @@ public class AuthController {
 //        return ResponseEntity.ok(response);
 //    }
 
-    @PostMapping("/login/hotelier")
+
+   /* @PostMapping("/login/hotelier")
     public ResponseEntity<Map<String, Object>> loginHotelier(@RequestBody User userRequest) {
         Optional<User> optionalUser = userRepository.findByUsername(userRequest.getUsername());
 
         if (optionalUser.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User not found"));
+                    .body(Map.of("message", "User Invalid username or password"));
         }
 
         User dbUser = optionalUser.get();
@@ -408,17 +570,26 @@ public class AuthController {
         response.put("token", token);
         return ResponseEntity.ok(response);
     }
-
+*/
 
     @PostMapping("/register/hotelier")
     public ResponseEntity<?> registerHotelier(@RequestBody User user) {
+
         try {
             User registeredUser = userService.registerHotelier(user);
+
+            // If we reached here, DB save was successful.
+            String message = registeredUser.isMailFailed()
+                    ? "Registration success, but email failed."
+                    : "Registration successful!";
+
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(Map.of("message", "Hotelier registered successfully. Awaiting admin approval.", "user", registeredUser));
+                    .body(Map.of("message", message, "user", registeredUser));
+
         } catch (Exception e) {
+            // This now catches DB errors, connection errors, and null pointers
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error registering hotelier", "error", e.getMessage()));
+                    .body(Map.of("message", "Database Error: Registration failed", "error", e.getMessage()));
         }
     }
 
@@ -447,37 +618,49 @@ public class AuthController {
         }
     }
 
+
+
     @PostMapping("/login/admin")
-    public ResponseEntity<Map<String, Object>> loginAdmin(@RequestBody User userRequest) {
+    public ResponseEntity<?> loginAdmin(@RequestBody User userRequest, HttpServletRequest request) {
+        // 🛡️ 1. Rate Limiting Check (Stricter for Admin)
+        String ip = request.getRemoteAddr();
+        Bucket bucket = rateLimitingService.resolveAdminBucket(ip); // resolveAdminBucket(ip)
+
+        if (!bucket.tryConsume(1)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(Map.of("message", "Too many admin login attempts. Try again Later."));
+        }
+
+        // 🛡️ 2. Fetch User & Check Role BEFORE Authenticating
+        // This saves CPU cycles if the user isn't even an admin
         Optional<User> optionalUser = userRepository.findByUsername(userRequest.getUsername());
 
-        if (optionalUser.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User not found"));
-        }
-
-        User dbUser = optionalUser.get();
-
-        if (!"ADMIN".equalsIgnoreCase(dbUser.getRole())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "Access denied: not an admin account"));
-        }
-
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(userRequest.getUsername(), userRequest.getPassword()));
-        } catch (Exception e) {
+        if (optionalUser.isEmpty() || !"ADMIN".equalsIgnoreCase(optionalUser.get().getRole())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid credentials"));
         }
 
-        String token = jwtUtil.generateToken(userRequest.getUsername());
+        try {
+            // 🛡️ 3. Authenticate
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(userRequest.getUsername(), userRequest.getPassword()));
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Admin login successful");
-        response.put("token", token);
-        return ResponseEntity.ok(response);
+            // 🛡️ 4. Generate Admin Token
+            String token = jwtUtil.generateToken(userRequest.getUsername());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Admin login successful");
+            response.put("token", token);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid credentials"));
+        }
     }
+
+
+
 
     @GetMapping("/me/status")
     public ResponseEntity<Map<String, String>> getCurrentUserStatus() {
@@ -491,7 +674,7 @@ public class AuthController {
 
         String username = authentication.getName();
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
         Map<String, String> response = new HashMap<>();
         response.put("status", user.getStatus());
@@ -504,39 +687,5 @@ public class AuthController {
         return ResponseEntity.ok(response); // ✅ return the response with remark
     }
 
-    @GetMapping("/test")
-    public ResponseEntity<String> sendTestEmail() {
-        try {
-            String toEmail = "rishabhsingh30702@gmail.com";
-
-            String subject = "Welcome to Valliento / StaySearch – Test Email";
-
-            String htmlContent = "<!DOCTYPE html>" +
-                    "<html>" +
-                    "<head>" +
-                    "<meta charset='UTF-8'>" +
-                    "<title>Valliento Test Email</title>" +
-                    "</head>" +
-                    "<body style='font-family: Arial, sans-serif; line-height:1.6; color:#333;'>" +
-                    "<div style='max-width:600px; margin:auto; padding:20px; border:1px solid #ddd; border-radius:8px;'>" +
-                    "<h2 style='color:#761461;'>Hello from Valliento / StaySearch!</h2>" +
-                    "<p>This is a test email sent using SendGrid. It is designed to pass spam filters.</p>" +
-                    "<p style='background:#f4f4f4; padding:10px; border-radius:5px;'>You can safely receive this email in your inbox.</p>" +
-                    "<p>Visit our platform: <a href='https://staging.valliento.tech' style='color:#761461;'>StaySearch Dashboard</a></p>" +
-                    "<hr style='border:none; border-top:1px solid #ddd; margin:20px 0;'/>" +
-                    "<p style='font-size:12px; color:gray;'>This is a system-generated test email. Do not reply.</p>" +
-                    "</div>" +
-                    "</body>" +
-                    "</html>";
-
-            // Send email using EmailService
-            emailService.sendEmail(toEmail, subject, htmlContent);
-
-            return ResponseEntity.ok("Test email sent successfully. Check your inbox (or spam folder).");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("Error sending test email: " + e.getMessage());
-        }
-    }
 
 }

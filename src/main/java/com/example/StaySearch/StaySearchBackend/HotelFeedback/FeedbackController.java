@@ -15,7 +15,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/feedbacks")
-@CrossOrigin(origins = "*") // Allow frontend requests
+// Allow frontend requests
 public class FeedbackController {
 
     @Autowired

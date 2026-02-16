@@ -14,6 +14,7 @@ com\example\StaySearch\StaySearchBackend\Hotels\HotelierService.class
 com\example\StaySearch\StaySearchBackend\JWT\AuthController.class
 com\example\StaySearch\StaySearchBackend\HotelFeedback\HotelFeedbackService.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\InformationalPageController.class
+com\example\StaySearch\StaySearchBackend\Security\RateLimitingService.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\PromotionalMaterial.class
 com\example\StaySearch\StaySearchBackend\JWT\User.class
 com\example\StaySearch\StaySearchBackend\CloudinaryConfig\CloudinaryConfig.class
@@ -28,6 +29,7 @@ com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Service.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\PaymentController.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\StripeService.class
 com\example\StaySearch\StaySearchBackend\Razorpay\Dtos.class
+com\example\StaySearch\StaySearchBackend\JWT\AuthController$UpdateUserRequest.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Controller.class
 com\example\StaySearch\StaySearchBackend\Hotels\RoomRepository.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\PaymentRequest.class
@@ -48,12 +50,15 @@ com\example\StaySearch\StaySearchBackend\PaymentGateway\PaymentGatewaySettingsSe
 com\example\StaySearch\StaySearchBackend\Razorpay\Dtos$VerifyRequest.class
 com\example\StaySearch\StaySearchBackend\HotelFeedback\FeedbackStatus.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\InformationalPageRepository.class
+com\example\StaySearch\StaySearchBackend\JWT\AuthController$RegisterRequest.class
 com\example\StaySearch\StaySearchBackend\Razorpay\RazorpayClient.class
 com\example\StaySearch\StaySearchBackend\Razorpay\InvoiceService.class
 com\example\StaySearch\StaySearchBackend\Razorpay\Dtos$CreateOrderRequest.class
 com\example\StaySearch\StaySearchBackend\CommercialAndOffers\SchedulerConfig.class
 com\example\StaySearch\StaySearchBackend\Razorpay\InvoiceRequest.class
+com\example\StaySearch\StaySearchBackend\Security\XssSanitizer.class
 com\example\StaySearch\StaySearchBackend\CloudinaryConfig\CloudinaryService.class
+com\example\StaySearch\StaySearchBackend\Hotels\HotelUpdateDTO.class
 com\example\StaySearch\StaySearchBackend\Hotels\Hotel_Entity.class
 com\example\StaySearch\StaySearchBackend\JWT\UserService.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\PaymentGatewaySettingsController.class

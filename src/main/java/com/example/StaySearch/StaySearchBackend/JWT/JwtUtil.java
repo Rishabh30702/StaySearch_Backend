@@ -44,8 +44,34 @@ public class JwtUtil {
         return claimsResolver.apply(claims);
     }
 
-    public boolean validateToken(String token, String username) {
-        return (extractUsername(token).equals(username) && !isTokenExpired(token));
+    /**
+     * @param token The JWT token from the request
+     * @param username The username from the user details
+     * @param lastPasswordResetDate The timestamp from your DB (in milliseconds)
+     */
+    public boolean validateToken(String token, String username, long lastPasswordResetDate) {
+        final String tokenUsername = extractUsername(token);
+        final Date issuedAt = extractIssuedAt(token);
+
+        // 1. Check if username matches
+        // 2. Check if token is physically expired (TTL)
+        // 3. Check if token was issued BEFORE the last password change
+        return (tokenUsername.equals(username) &&
+                !isTokenExpired(token) &&
+                !isIssuedBeforePasswordChange(issuedAt, lastPasswordResetDate));
+    }
+
+    private boolean isIssuedBeforePasswordChange(Date issuedAt, long lastPasswordResetDate) {
+        // If issuedAt is null, something is wrong with the token
+        if (issuedAt == null) return true;
+
+        // Check if the token was issued before the password was changed
+        // We use milliseconds for a precise comparison
+        return issuedAt.getTime() < lastPasswordResetDate;
+    }
+
+    public Date extractIssuedAt(String token) {
+        return extractClaim(token, Claims::getIssuedAt);
     }
 
     private boolean isTokenExpired(String token) {

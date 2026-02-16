@@ -20,10 +20,10 @@ public class Hotel_Entity {
     @Column(name = "hotel_id")
     private Integer hotelId;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name", nullable = false,  length = 255)
     private String name;
 
-    @Column(name = "destination", nullable = false)
+    @Column(name = "destination", nullable = false, length = 255)
     private String destination;
 
     @Column(name = "description", columnDefinition = "TEXT")
@@ -32,7 +32,7 @@ public class Hotel_Entity {
     @Column(name = "price", precision = 10, scale = 2) // Storing price as decimal
     private BigDecimal price;
 
-    @Column(name = "image_url")  // Store image as URL instead of BLOB
+    @Column(name = "image_url", length = 500)  // Store image as URL instead of BLOB
     private String imageUrl;
 
 
@@ -45,13 +45,13 @@ public class Hotel_Entity {
     @Column(name = "rating")
     private Float rating;
 
-    @Column(name = "reviews")
+    @Column(name = "reviews", length = 1000)
     private String reviews;
 
     @Column(name = "liked")
     private Boolean liked;
 
-    @Column(name = "address")
+    @Column(name = "address", length = 500)
     private String address;
 
     @Column(name = "check_in")
@@ -68,7 +68,7 @@ public class Hotel_Entity {
     @Column(name = "rooms")
     private Integer rooms;
 
-    @Column(name = "accommodation_type")
+    @Column(name = "accommodation_type",  length = 100)
     private String accommodationType;
 
     @Version

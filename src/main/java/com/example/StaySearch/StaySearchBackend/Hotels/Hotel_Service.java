@@ -5,6 +5,7 @@ import com.cloudinary.utils.ObjectUtils;
 import com.example.StaySearch.StaySearchBackend.Exception.ResourceNotFoundException;
 import com.example.StaySearch.StaySearchBackend.JWT.User;
 import com.example.StaySearch.StaySearchBackend.JWT.UserRepository;
+import com.example.StaySearch.StaySearchBackend.Security.XssSanitizer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -66,94 +67,41 @@ public class Hotel_Service {
 
     //This is the function to partial update the field
     @Transactional
-    public Hotel_Entity updateHotelPartial(Integer hotelId, Hotel_Entity updatedHotel) {
-        Optional<Hotel_Entity> optionalHotel = hotelRepository.findById(hotelId);
-        if (optionalHotel.isPresent()) {
-            Hotel_Entity existingHotel = optionalHotel.get();
+    public void updateHotelPartial(Integer hotelId, HotelUpdateDTO dto) {
 
-            if (updatedHotel.getName() != null) {
-                existingHotel.setName(updatedHotel.getName());
-            }
-            if (updatedHotel.getDescription() != null) {
-                existingHotel.setDescription(updatedHotel.getDescription());
-            }
-            if (updatedHotel.getDestination() != null) {
-                existingHotel.setDestination(updatedHotel.getDestination());
-            }
-            if (updatedHotel.getPrice() != null) {
-                existingHotel.setPrice(updatedHotel.getPrice());
-            }
-            if (updatedHotel.getLat() != null) {
-                existingHotel.setLat(updatedHotel.getLat());
-            }
-            if (updatedHotel.getLng() != null) {
-                existingHotel.setLng(updatedHotel.getLng());
-            }
-            if (updatedHotel.getRating() != null) {
-                existingHotel.setRating(updatedHotel.getRating());
-            }
-            if (updatedHotel.getReviews() != null) {
-                existingHotel.setReviews(updatedHotel.getReviews());
-            }
-            if (updatedHotel.getLiked() != null) {
-                existingHotel.setLiked(updatedHotel.getLiked());
-            }
-            if (updatedHotel.getAddress() != null) {
-                existingHotel.setAddress(updatedHotel.getAddress());
-            }
-            if (updatedHotel.getCheckIn() != null) {
-                existingHotel.setCheckIn(updatedHotel.getCheckIn());
-            }
-            if (updatedHotel.getCheckOut() != null) {
-                existingHotel.setCheckOut(updatedHotel.getCheckOut());
-            }
-            if (updatedHotel.getGuests() != null) {
-                existingHotel.setGuests(updatedHotel.getGuests());
-            }
-            if (updatedHotel.getRooms() != null) {
-                existingHotel.setRooms(updatedHotel.getRooms());
-            }
-            if (updatedHotel.getImageUrl() != null) {
-                existingHotel.setImageUrl(updatedHotel.getImageUrl());
-            }
-            if (updatedHotel.getAmenities() != null) {
-                existingHotel.setAmenities(updatedHotel.getAmenities());
-            }
-            if (updatedHotel.getRoomsList() != null) {
-                // Clear the existing rooms if you're replacing them
-                existingHotel.getRoomsList().clear();
+        Hotel_Entity existingHotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() ->
+                        new RuntimeException("Hotel not found with ID: " + hotelId)
+                );
 
-                // Loop through incoming rooms and bind them to this hotel
-                for (Room room : updatedHotel.getRoomsList()) {
-                    room.setHotel(existingHotel); // important!
-                    existingHotel.getRoomsList().add(room);
-                }
-            }
-            if (updatedHotel.getAccommodationType() != null) {
-                existingHotel.setAccommodationType(updatedHotel.getAccommodationType());
-            }
-            if (updatedHotel.getSubImages() != null) {
-                existingHotel.setSubImages(updatedHotel.getSubImages());
-            }
-//            if (updatedHotel.getImageUrl() != null) {
-//                existingHotel.setImageUrl(updatedHotel.getImageUrl());
-//            }
-
-            // Optional (only if needed and properly secured)
-        /*
-        if (updatedHotel.getLikedByUsers() != null) {
-            existingHotel.setLikedByUsers(updatedHotel.getLikedByUsers());
+        if (dto.getName() != null) {
+            existingHotel.setName(
+                    XssSanitizer.sanitize(dto.getName())
+            );
         }
-        if (updatedHotel.getUser() != null) {
-            existingHotel.setUser(updatedHotel.getUser());
-        }
-        */
 
-            return hotelRepository.save(existingHotel);
-        } else {
-            throw new RuntimeException("Hotel not found with ID: " + hotelId);
+        if (dto.getAddress() != null) {
+            existingHotel.setAddress(
+                    XssSanitizer.sanitize(dto.getAddress())
+            );
         }
+
+        if (dto.getAccommodationType() != null) {
+            existingHotel.setAccommodationType(
+                    XssSanitizer.sanitize(dto.getAccommodationType())
+            );
+        }
+
+        if (dto.getDescription() != null) {
+            existingHotel.setDescription(
+                    XssSanitizer.sanitize(dto.getDescription())
+            );
+        }
+
+
+         hotelRepository.save(existingHotel);
     }
+
 
 
     //This is the function to delete the record according to the hotel Id

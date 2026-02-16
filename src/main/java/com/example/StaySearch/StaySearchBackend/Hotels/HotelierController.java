@@ -6,6 +6,7 @@ import com.example.StaySearch.StaySearchBackend.CloudinaryConfig.CloudinaryServi
 import com.example.StaySearch.StaySearchBackend.Exception.ResourceNotFoundException;
 import com.example.StaySearch.StaySearchBackend.JWT.User;
 import com.example.StaySearch.StaySearchBackend.JWT.UserRepository;
+import com.example.StaySearch.StaySearchBackend.Security.XssSanitizer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/hotelier")
-@CrossOrigin(origins = "*")
+
 public class HotelierController {
 
     @Autowired
@@ -61,7 +62,7 @@ public class HotelierController {
     @PostMapping("/hotels")
     public ResponseEntity<Hotel_Entity> addHotel(@RequestBody Hotel_Entity hotel) {
         User hotelier = userRepository.findByUsername("hotelier@example.com")
-                .orElseThrow(() -> new RuntimeException("Hotelier not found"));
+                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
         hotel.setUser(hotelier); // 🛠️ This sets the user_id foreign key
 
@@ -88,12 +89,33 @@ public class HotelierController {
             @RequestParam(value = "description", required = false) String description
             ) {
 
+
+        // 🛡️ 1. XSS Security Check (Reusing XssSanitizer logic)
+        if (isStringMalicious(name) || isStringMalicious(description)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Security Violation: HTML/Scripts are not allowed."));
+        }
+
+        // 🛡️ 2. Business Logic Check (Manual range check)
+        if (price < 0 || total < 1 || available < 0 || available > total) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Data Violation: Invalid price or room count."));
+        }
+
+
+
         try {
             Room updatedRoom = hotelierService.updateRoom(roomId, hotelId, name, available, total, price, deal, description);
             return new ResponseEntity<>(updatedRoom, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+
+    private boolean isStringMalicious(String input) {
+        if (input == null || input.isEmpty()) return false;
+        return !input.equals(XssSanitizer.sanitize(input));
     }
 
 

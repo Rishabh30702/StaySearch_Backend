@@ -1,5 +1,7 @@
 package com.example.StaySearch.StaySearchBackend.JWT;
 
+import com.example.StaySearch.StaySearchBackend.Security.XssSanitizer;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +10,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
+
+import lombok.extern.slf4j.Slf4j; // Add this import
+
 
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
+@Slf4j
 @Service
 public class UserService {
     @Autowired
@@ -26,23 +33,76 @@ public class UserService {
     @Autowired
     private EmailService emailService; // ✅ Inject EmailService
 
-
+    private boolean lastMailFailed = false;
     public User registerUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setPasswordLastChangedAt(System.currentTimeMillis());
         User savedUser = userRepository.save(user);
-        sendWelcomeEmail(savedUser.getUsername()); // ✅ Sends email after registration
+
+        try {
+            System.out.println("Sending welcome email to User: " + savedUser.getUsername()  );
+            sendWelcomeEmail(savedUser.getUsername());
+            lastMailFailed = false;
+        } catch (Exception e) {
+            System.err.println("Email Error: " + e.getMessage());
+            lastMailFailed = true; // Set the flag
+        }// ✅ Sends email after registration
         return savedUser;
     }
 
+    public boolean isLastMailFailed() {
+        return lastMailFailed;
+    }
+
+    @Transactional // Ensures database integrity
     public User registerHotelier(User user) {
+
+        // 2. Tightened Validation
+        validatePassword(user.getPassword());
+        // 1. Prepare User Data
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole("Hotelier");
         user.setStatus("PENDING");
+
+        // 2. Save User (If this fails, an exception is thrown and the method stops)
         User savedUser = userRepository.save(user);
 
-        sendHotelierRegistrationEmail(savedUser);
+        // 3. Attempt Email (Failure here does NOT stop the registration)
+        try {
+            sendHotelierRegistrationEmail(savedUser);
+            savedUser.setMailFailed(false);
+        } catch (Exception e) {
+            // Log the error for Prod debugging
+            log.error("CRITICAL: User saved (ID: {}), but email failed: {}",
+                    savedUser.getId(), e.getMessage());
+
+            savedUser.setMailFailed(true);
+        }
+
         return savedUser;
     }
+
+
+    public void validatePassword(String password) {
+        // 1. Strict Regex: 8-32 chars, must contain Upper, Lower, Digit, and Special.
+        // No whitespace allowed.
+        String strictRegex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,32}$";
+
+        if (password == null) throw new IllegalArgumentException("Password cannot be null.");
+
+        if (!password.matches(strictRegex)) {
+            throw new IllegalArgumentException("Password must be 8-32 chars, with upper, lower, digit, and special char (@$!%*?&).");
+        }
+
+        // 2. Prevent Repeated Characters (e.g., "aaaaa", "11111")
+        if (Pattern.compile("(.)\\1{3,}").matcher(password).find()) {
+            throw new IllegalArgumentException("Password contains too many repeating characters.");
+        }
+
+
+    }
+
+
 
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
@@ -100,15 +160,53 @@ public class UserService {
         }
         return false;
     }
-    public boolean updatePassword(String email, String oldPassword, String newPassword) {
+    public String updatePassword(String email, String oldPassword, String newPassword) {
+        System.out.println("Searching for user with email: [" + email + "]");
         User user = userRepository.findByUsername(email).orElse(null);
-        if (user != null && passwordEncoder.matches(oldPassword, user.getPassword())) {
-            user.setPassword(passwordEncoder.encode(newPassword));
-            userRepository.save(user);
-            return true;
+
+        if (user == null) {
+            return "Invalid username or password.";
         }
-        return false;
+
+        // 1. Check old password
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            return "Old password is incorrect.";
+
+
+        }
+
+        // 2. Prevent old password reuse
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new IllegalArgumentException(
+                    "New password cannot be the same as the old password"
+            );
+        }
+
+        // 3. Enforce password complexity
+        validatePasswordStrength(newPassword);
+
+        user.setPasswordLastChangedAt(System.currentTimeMillis());
+        // 4. Save new password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        return "SUCCESS";
     }
+
+
+
+    private static final String PASSWORD_REGEX =
+            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+
+    private void validatePasswordStrength(String password) {
+        if (!password.matches(PASSWORD_REGEX)) {
+            throw new IllegalArgumentException(
+                    "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character"
+            );
+        }
+    }
+
+
 
     public void sendHotelierRegistrationEmail(User user) {
         String to = user.getUsername(); // assuming it's an email
@@ -160,7 +258,7 @@ public class UserService {
             userRepository.save(hotelier);
             return ResponseEntity.ok().body("Status updated to " + status);
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Hotelier not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid username name or password");
         }
     }
 
@@ -174,7 +272,7 @@ public class UserService {
 
             return ResponseEntity.ok().body("Status updated to " + status + " with remark: " + remark);
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Hotelier not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid username or password");
         }
     }
 
@@ -222,6 +320,17 @@ public class UserService {
     }
 
 
+
+    public boolean checkUsernameExists(String username) {
+        if (username == null || username.isBlank()) {
+            return false;
+        }
+
+        String cleanUsername = username.replaceAll("[<>]", "").trim().toLowerCase();
+
+        // 🛡️ Normalization: Ensure case-insensitive matching
+        return userRepository.existsByUsernameIgnoreCase(cleanUsername);
+    }
 
 
 }

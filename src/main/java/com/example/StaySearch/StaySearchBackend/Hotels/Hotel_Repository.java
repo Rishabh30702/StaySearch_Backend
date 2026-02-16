@@ -18,5 +18,7 @@ public interface Hotel_Repository extends JpaRepository<Hotel_Entity,Integer> {
     Optional<Hotel_Entity> findByUserAndName(User user, String name);
 
     List<Hotel_Entity> findByUser_Id(Integer userId);
+    List<Hotel_Entity> findAllByName(String name);
+
 
 }

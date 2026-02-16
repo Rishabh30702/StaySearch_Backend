@@ -6,27 +6,48 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Entity
 @Table(name = "users")
-public class User {
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
-    private String username;
-    private String password;
-    private String role;
 
+// Changes username to accept only valid email formats
+    @NotBlank(message = "Email/Username is required")
+    @Email(message = "Please provide a valid email address")
+    @Size(max = 50, message = "Email is too long")
+    @Column(unique = true, nullable = false)
+    private String username;
+
+    @NotBlank(message = "Password is required")
+
+    private String password;
+
+    @NotBlank(message = "Full name is required")
+    @Pattern(regexp = "^[a-zA-Z\\s'-]+$", message = "Full name contains illegal characters")
     @Column(name = "fullname")
     private String fullname;
 
+    @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Phone must be 10-15 digits")
     @Column(name = "phone")
     private String phonenumber;
+
+    private String role;
 
     @ManyToMany
     @JoinTable(
@@ -53,6 +74,54 @@ public class User {
 
     @Column(name = "rejection_remark")
     private String rejectionRemark;
+
+    @Column(name = "password_changed_at")
+    private Long passwordLastChangedAt = System.currentTimeMillis();
+
+    public Long getPasswordLastChangedAt() {
+        return passwordLastChangedAt;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // This wraps your string role into a SimpleGrantedAuthority object
+        // and puts it into a List (which is a type of Collection)
+        return List.of(new SimpleGrantedAuthority(this.role));
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // Set to true so the user can log in
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true; // Set to true so the user can log in
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // Set to true so the user can log in
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true; // Set to true so the user can log in
+    }
+
+    public void setPasswordLastChangedAt(Long passwordLastChangedAt) {
+        this.passwordLastChangedAt = passwordLastChangedAt;
+    }
+
+
+    @Transient
+    private boolean mailFailed;
+
+    public boolean isMailFailed() { return mailFailed; }
+    public void setMailFailed(boolean mailFailed) { this.mailFailed = mailFailed; }
+
+
+
 
     public User() {
     }

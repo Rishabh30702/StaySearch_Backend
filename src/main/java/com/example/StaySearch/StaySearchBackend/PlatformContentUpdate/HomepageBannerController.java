@@ -2,9 +2,11 @@ package com.example.StaySearch.StaySearchBackend.PlatformContentUpdate;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.example.StaySearch.StaySearchBackend.Security.XssSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,19 +26,38 @@ public class HomepageBannerController {
 
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<HomepageBanner> createBanner(
+    public ResponseEntity<?> createBanner(
             @RequestParam String title,
             @RequestParam MultipartFile image
     ) throws IOException {
+      try {
 
-        String imageUrl = cloudinary.uploader().upload(image.getBytes(), ObjectUtils.emptyMap())
-                .get("url").toString();
 
-        HomepageBanner banner = new HomepageBanner();
-        banner.setTitle(title);
-        banner.setImageUrl(imageUrl);
+          // 1. Use your existing utility to sanitize the title
+          String safeTitle = XssSanitizer.sanitize(title);
 
-        return ResponseEntity.ok(repository.save(banner));
+          // 2. Upload image to Cloudinary
+          String imageUrl = cloudinary.uploader().upload(image.getBytes(), ObjectUtils.emptyMap())
+                  .get("url").toString();
+
+          HomepageBanner banner = new HomepageBanner();
+          banner.setTitle(safeTitle);
+          banner.setImageUrl(imageUrl);
+
+          return ResponseEntity.ok(repository.saveAndFlush(banner));
+      }
+      catch (Exception e) {
+          // Look deep inside the exception for the validation error
+          Throwable rootCause = org.springframework.core.NestedExceptionUtils.getMostSpecificCause(e);
+
+          if (rootCause instanceof jakarta.validation.ConstraintViolationException) {
+              return ResponseEntity.badRequest().body("Validation failed: Title must be 3-50 alphanumeric characters and no HTML.");
+          }
+
+          // If it's a different error (like Cloudinary failing), return 500
+          return ResponseEntity.status(500).body("Server Error: " + e.getMessage());
+      }
+
     }
     // Add GET, PUT, DELETE if needed
     @GetMapping
