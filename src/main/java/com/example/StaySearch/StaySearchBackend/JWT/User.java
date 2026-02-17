@@ -37,12 +37,12 @@ public class User implements UserDetails {
 
     private String password;
 
-    @NotBlank(message = "Full name is required")
+
     @Pattern(regexp = "^[a-zA-Z\\s'-]+$", message = "Full name contains illegal characters")
     @Column(name = "fullname")
     private String fullname;
 
-    @NotBlank(message = "Phone number is required")
+
     @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Phone must be 10-15 digits")
     @Column(name = "phone")
     private String phonenumber;

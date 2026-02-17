@@ -593,7 +593,9 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/register/admin")
+
+//
+   /* @PostMapping("/register/admin")
     public ResponseEntity<?> registerAdmin(@RequestBody User userRequest) {
         try {
             // Check if username already exists
@@ -617,7 +619,7 @@ public class AuthController {
                     .body(Map.of("message", "Error registering admin", "error", e.getMessage()));
         }
     }
-
+*/
 
 
     @PostMapping("/login/admin")
