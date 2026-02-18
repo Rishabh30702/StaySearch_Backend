@@ -3,6 +3,7 @@ package com.example.StaySearch.StaySearchBackend.JWT;
 
 import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Entity;
 import com.example.StaySearch.StaySearchBackend.Hotels.Hotel_Repository;
+import com.example.StaySearch.StaySearchBackend.Razorpay.InvoiceRequest;
 import com.example.StaySearch.StaySearchBackend.Security.RateLimitingService;
 import com.example.StaySearch.StaySearchBackend.Security.XssSanitizer;
 import io.github.bucket4j.Bucket;
@@ -12,6 +13,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +26,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -572,8 +575,16 @@ public class AuthController {
     }
 */
 
+
+
+
+
+
+
     @PostMapping("/register/hotelier")
     public ResponseEntity<?> registerHotelier(@RequestBody User user) {
+
+
 
         try {
             User registeredUser = userService.registerHotelier(user);

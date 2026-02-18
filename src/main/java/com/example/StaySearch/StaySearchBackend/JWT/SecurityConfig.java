@@ -111,7 +111,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/reject/**").hasAnyAuthority("ADMIN", "Admin")
                         .requestMatchers("/auth/pending/**").hasAnyAuthority("ADMIN", "Admin")
                         .requestMatchers("/auth/admin/**").hasAnyAuthority("ADMIN", "Admin")
-                         .requestMatchers("/v1/deleteHotel/**", "/v1/hotels").hasAnyAuthority("ADMIN", "Admin")
+                         .requestMatchers("/v1/deleteHotel/**").hasAnyAuthority("ADMIN", "Admin")
 
                         .requestMatchers("/auth/allUsers", "/auth/delete/**").hasAnyAuthority("ADMIN", "Admin")
                         .requestMatchers(HttpMethod.GET,"/api/payments/invoice" ).hasAnyAuthority("ADMIN", "Admin")
@@ -144,7 +144,7 @@ public class SecurityConfig {
                 "https://upstdcstaysearch.com"
                 // add localhost ONLY in dev profile
                 // remove these when on testing env
-//                 "http://localhost:4200"
+//                "http://localhost:4200"
         ));
 
         config.setAllowedMethods(List.of(
