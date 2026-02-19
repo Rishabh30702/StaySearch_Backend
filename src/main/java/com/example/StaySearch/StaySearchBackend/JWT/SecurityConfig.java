@@ -120,6 +120,8 @@ public class SecurityConfig {
                         // 2. HOTELIER & ADMIN - Middle Priority
                         .requestMatchers( "/v1/mine/hotels/**").hasAuthority("Hotelier")
                         .requestMatchers(HttpMethod.PATCH, "/v1/updateHotel/**").hasAnyAuthority("Hotelier", "ADMIN", "Admin")
+                        .requestMatchers("/api/payments/callback").permitAll()
+
 
                         // 3. AUTHENTICATED USERS
                         .requestMatchers("/auth/me/**", "/auth/wishlist/**").authenticated()
