@@ -1,8 +1,6 @@
 package com.example.StaySearch.StaySearchBackend.Razorpay;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,7 +15,6 @@ public class InvoiceRequest {
     private String customerEmail;
     private String customerPhone;
     private String hotelName;
-    @NotNull(message = "Amount is required to generate an invoice")
     private Long amountInPaise;
 
     private String invoiceUrl;   // ✅ Cloudinary URL

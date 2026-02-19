@@ -664,18 +664,18 @@ public class PaymentsController {
 
     @PostMapping("/invoice")
     public ResponseEntity<?> createInvoice(@RequestBody @Valid InvoiceRequest req) {
-
-        // Safely extract the amount, default to 0 if null
-        long amount = (req.getAmountInPaise() != null) ? req.getAmountInPaise() : 0L;
+        Double dbAmount = paymentGatewayService.getAmount();
+        long amountInPaise = Math.round(dbAmount * 100);
 
         invoiceService.generateAndSendInvoice(
-                req.getOrderId(),
+                req.getOrderId(),          // ✅ we’ll still pass it for DB storage
                 req.getPaymentId(),
                 req.getCustomerEmail(),
                 req.getHotelName(),
-                amount,  // Pass the safely guaranteed primitive long
+                amountInPaise,
                 req.getCustomerPhone()
         );
+
         return ResponseEntity.ok(Map.of("success", true, "message", "Invoice generated & sent"));
     }
 

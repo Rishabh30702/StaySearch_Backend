@@ -2,6 +2,7 @@ package com.example.StaySearch.StaySearchBackend.Razorpay;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.example.StaySearch.StaySearchBackend.PaymentGateway.PaymentGatewaySettingsService;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
@@ -34,23 +35,30 @@ public class InvoiceService {
     @Autowired
     private InvoiceRepository invoiceRepository;  // ✅ DB repository
 
+
+    @Autowired
+    private PaymentGatewaySettingsService paymentGatewayService;
+
     @Value("${sendgrid.api.key}")
     private String sendGridApiKey;
 
     @Value("${sendgrid.from.email}")
     private String fromEmail;
 
-    public void generateAndSendInvoice(String orderId, String paymentId,
-                                       String customerEmail, String hotelName,
-                                       long amount, String customerPhone) {
+    public void generateAndSendInvoice(String orderId,
+                                       String paymentId,
+                                       String customerEmail,
+                                       String hotelName,
+                                       long amount,
+                                       String customerPhone) {
         try {
-            // 1️⃣ Generate invoice PDF
-            byte[] pdfBytes = generateInvoice(orderId, paymentId, customerEmail, hotelName, amount);
+            // Generate invoice (without showing orderId)
+            byte[] pdfBytes = generateInvoice(paymentId, customerEmail, hotelName, amount);
 
-            // 2️⃣ Upload to Cloudinary
-            String invoiceUrl = uploadToCloudinary(pdfBytes, orderId);
+            // Upload PDF
+            String invoiceUrl = uploadToCloudinary(pdfBytes, paymentId);
 
-            // 3️⃣ Save metadata + URL in DB
+            // Save in DB (✅ still storing orderId)
             InvoiceRequest invoice = new InvoiceRequest();
             invoice.setOrderId(orderId);
             invoice.setPaymentId(paymentId);
@@ -61,8 +69,8 @@ public class InvoiceService {
             invoice.setInvoiceUrl(invoiceUrl);
             invoiceRepository.save(invoice);
 
-            // 4️⃣ Email with PDF attached
-            sendEmailWithInvoice(customerEmail, pdfBytes, orderId, paymentId, amount, hotelName);
+            // Send email (✅ no orderId shown)
+            sendEmailWithInvoice(customerEmail, pdfBytes, paymentId, amount, hotelName);
 
             System.out.println("[InvoiceService] ✅ Invoice saved, uploaded & sent to " + customerEmail);
         } catch (Exception e) {
@@ -70,29 +78,28 @@ public class InvoiceService {
         }
     }
 
-    private byte[] generateInvoice(String orderId, String paymentId,
-                                   String customerEmail, String hotelName, long amount) throws Exception {
+    private byte[] generateInvoice(String paymentId,
+                                   String customerEmail,
+                                   String hotelName,
+                                   long amount) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Document doc = new Document(PageSize.A4, 50, 50, 50, 50);
         PdfWriter.getInstance(doc, baos);
 
         doc.open();
 
-        // Title
         Font titleFont = new Font(Font.FontFamily.HELVETICA, 20, Font.BOLD, BaseColor.DARK_GRAY);
         Paragraph title = new Paragraph("StaySearch Hotel Booking Invoice", titleFont);
         title.setAlignment(Element.ALIGN_CENTER);
         doc.add(title);
-
         doc.add(new Paragraph("\n"));
 
-        // Table with invoice details
         PdfPTable table = new PdfPTable(2);
         table.setWidthPercentage(100);
         table.setSpacingBefore(10f);
         table.setSpacingAfter(10f);
 
-        addTableCell(table, "Order ID:", orderId);
+        // ✅ No orderId here
         addTableCell(table, "Payment ID:", paymentId);
         addTableCell(table, "Hotel Name:", hotelName);
         addTableCell(table, "Amount Paid:", "₹" + (amount / 100.0));
@@ -101,7 +108,6 @@ public class InvoiceService {
         addTableCell(table, "Status:", "SUCCESS ✅");
 
         doc.add(table);
-
         doc.add(new Paragraph("\nThank you for booking with StaySearch. We look forward to hosting you!",
                 new Font(Font.FontFamily.HELVETICA, 12, Font.ITALIC, BaseColor.GRAY)));
 
@@ -112,23 +118,20 @@ public class InvoiceService {
     private void addTableCell(PdfPTable table, String key, String value) {
         PdfPCell cell1 = new PdfPCell(new Phrase(key, new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD)));
         PdfPCell cell2 = new PdfPCell(new Phrase(value, new Font(Font.FontFamily.HELVETICA, 12)));
-
         cell1.setBorder(Rectangle.NO_BORDER);
         cell2.setBorder(Rectangle.NO_BORDER);
-
         table.addCell(cell1);
         table.addCell(cell2);
     }
 
     private void sendEmailWithInvoice(String toEmail,
                                       byte[] pdfBytes,
-                                      String orderId,
                                       String paymentId,
                                       long amount,
                                       String hotelName) throws Exception {
         Email from = new Email(fromEmail);
         Email to = new Email(toEmail);
-        String subject = "StaySearch Booking Confirmation - " + orderId;
+        String subject = "StaySearch Booking Confirmation - " + paymentId;
 
         String htmlContent =
                 "<html>" +
@@ -137,7 +140,6 @@ public class InvoiceService {
                         "<p>Dear Customer,</p>" +
                         "<p>Your payment has been successfully processed for your hotel booking.</p>" +
                         "<table style='width:100%; border-collapse: collapse;'>" +
-                        "<tr><td><b>Order ID:</b></td><td>" + orderId + "</td></tr>" +
                         "<tr><td><b>Payment ID:</b></td><td>" + paymentId + "</td></tr>" +
                         "<tr><td><b>Hotel:</b></td><td>" + hotelName + "</td></tr>" +
                         "<tr><td><b>Amount:</b></td><td>₹" + (amount / 100.0) + "</td></tr>" +
@@ -150,11 +152,10 @@ public class InvoiceService {
         Content content = new Content("text/html", htmlContent);
         Mail mail = new Mail(from, subject, to, content);
 
-        // ✅ Add PDF as attachment
         Attachments attachments = new Attachments();
         attachments.setContent(Base64.getEncoder().encodeToString(pdfBytes));
         attachments.setType("application/pdf");
-        attachments.setFilename("Invoice-" + orderId + ".pdf");
+        attachments.setFilename("Invoice-" + paymentId + ".pdf");
         attachments.setDisposition("attachment");
         mail.addAttachments(attachments);
 
@@ -169,12 +170,13 @@ public class InvoiceService {
         System.out.println("Body: " + response.getBody());
     }
 
-    private String uploadToCloudinary(byte[] pdfBytes, String orderId) throws Exception {
+
+    private String uploadToCloudinary(byte[] pdfBytes, String paymentId) throws Exception {
         Map uploadResult = cloudinary.uploader().upload(
                 pdfBytes,
                 ObjectUtils.asMap(
-                        "resource_type", "raw",  // 📂 raw because it's a PDF
-                        "public_id", "invoices/Invoice-" + orderId
+                        "resource_type", "raw",
+                        "public_id", "invoices/Invoice-" + paymentId
                 )
         );
         return uploadResult.get("secure_url").toString();
