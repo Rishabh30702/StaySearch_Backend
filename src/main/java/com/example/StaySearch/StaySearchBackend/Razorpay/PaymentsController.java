@@ -664,12 +664,16 @@ public class PaymentsController {
 
     @PostMapping("/invoice")
     public ResponseEntity<?> createInvoice(@RequestBody @Valid InvoiceRequest req) {
+
+        // Safely extract the amount, default to 0 if null
+        long amount = (req.getAmountInPaise() != null) ? req.getAmountInPaise() : 0L;
+
         invoiceService.generateAndSendInvoice(
                 req.getOrderId(),
                 req.getPaymentId(),
                 req.getCustomerEmail(),
                 req.getHotelName(),
-                req.getAmountInPaise(),
+                amount,  // Pass the safely guaranteed primitive long
                 req.getCustomerPhone()
         );
         return ResponseEntity.ok(Map.of("success", true, "message", "Invoice generated & sent"));

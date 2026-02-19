@@ -142,7 +142,6 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(
                 "https://upstdcstaysearch.igiletechnologies.com",
                 "https://upstdcstaysearch.com",
-                "https://staysearchbackend.onrender.com/api/payments/callback",
                 // add localhost ONLY in dev profile
                 // remove these when on testing env
                 "http://localhost:4200"
@@ -154,7 +153,10 @@ public class SecurityConfig {
 
         config.setAllowedHeaders(List.of(
                 "Authorization",
-                "Content-Type"
+                "Content-Type",
+                "X-Requested-With", // Add this
+                "Accept",           // Add this
+                "Origin"
         ));
 
         config.setAllowCredentials(true);
