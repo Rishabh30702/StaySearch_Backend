@@ -142,6 +142,7 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(
                 "https://upstdcstaysearch.igiletechnologies.com",
                 "https://upstdcstaysearch.com",
+                "https://staysearchbackend.onrender.com/api/payments/callback",
                 // add localhost ONLY in dev profile
                 // remove these when on testing env
                 "http://localhost:4200"
