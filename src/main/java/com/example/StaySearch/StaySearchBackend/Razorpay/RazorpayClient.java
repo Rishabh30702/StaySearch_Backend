@@ -60,4 +60,44 @@ public class RazorpayClient {
         ResponseEntity<JsonNode> resp = rest.postForEntity(url, new HttpEntity<>(form, authHeaders()), JsonNode.class);
         return resp.getBody();
     }
+
+    /** ✅ Create Hosted Checkout Payment Link with Redirect URLs */
+    public JsonNode createPaymentLink(long amountInPaise, String currency, String customerEmail, String customerContact, String receipt, Map<String,String> notes) {
+        String url = "https://api.razorpay.com/v1/payment_links";
+
+        Map<String, Object> body = Map.of(
+                "amount", amountInPaise,
+                "currency", currency == null ? "INR" : currency,
+                "accept_partial", false,
+                "description", "Booking Payment",
+                "reference_id", receipt != null ? receipt : "BOOKING-" + System.currentTimeMillis(),
+                "customer", Map.of(
+                        "name", "Customer",
+                        "email", customerEmail,
+                        "contact", customerContact
+                ),
+                "notify", Map.of("sms", true, "email", true),
+                "notes", notes != null ? notes : Map.of(),
+//                "callback_url", "https://testing.valliento.tech/api/payments/callback",  // ✅ FRONTEND PAGE server
+                "callback_url", "https://upstdcstaysearch.igiletechnologies.com/payment-success",  // ✅ FRONTEND PAGE localhost
+                "callback_method", "get"  // Razorpay will append payment details as query params
+        );
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, authHeaders());
+        ResponseEntity<JsonNode> resp = rest.postForEntity(url, entity, JsonNode.class);
+        return resp.getBody();
+    }
+
+    public JsonNode fetchPaymentLink(String paymentLinkId) {
+        String url = "https://api.razorpay.com/v1/payment_links/" + paymentLinkId;
+        ResponseEntity<JsonNode> resp = rest.exchange(url, HttpMethod.GET, new HttpEntity<>(authHeaders()), JsonNode.class);
+        return resp.getBody();
+    }
+
+    public JsonNode fetchPaymentsForOrder(String orderId) {
+        String url = "https://api.razorpay.com/v1/orders/" + orderId + "/payments";
+        ResponseEntity<JsonNode> resp = rest.exchange(url, HttpMethod.GET, new HttpEntity<>(authHeaders()), JsonNode.class);
+        return resp.getBody();
+    }
+
 }

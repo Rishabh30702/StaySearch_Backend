@@ -6,28 +6,39 @@ import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-import jakarta.mail.internet.MimeMessage;
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.Response;
+import com.sendgrid.SendGrid;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Attachments;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.Map;
 
 @Service
 public class InvoiceService {
 
     @Autowired
-    private JavaMailSender mailSender;
-
-    @Autowired
     private Cloudinary cloudinary;   // ✅ already configured in your project
 
     @Autowired
     private InvoiceRepository invoiceRepository;  // ✅ DB repository
+
+    @Value("${sendgrid.api.key}")
+    private String sendGridApiKey;
+
+    @Value("${sendgrid.from.email}")
+    private String fromEmail;
 
     public void generateAndSendInvoice(String orderId, String paymentId,
                                        String customerEmail, String hotelName,
@@ -109,13 +120,15 @@ public class InvoiceService {
         table.addCell(cell2);
     }
 
-    private void sendEmailWithInvoice(String toEmail, byte[] pdfBytes,
-                                      String orderId, String paymentId, long amount, String hotelName) throws Exception {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setTo(toEmail);
-        helper.setSubject("StaySearch Booking Confirmation - " + orderId);
+    private void sendEmailWithInvoice(String toEmail,
+                                      byte[] pdfBytes,
+                                      String orderId,
+                                      String paymentId,
+                                      long amount,
+                                      String hotelName) throws Exception {
+        Email from = new Email(fromEmail);
+        Email to = new Email(toEmail);
+        String subject = "StaySearch Booking Confirmation - " + orderId;
 
         String htmlContent =
                 "<html>" +
@@ -124,25 +137,36 @@ public class InvoiceService {
                         "<p>Dear Customer,</p>" +
                         "<p>Your payment has been successfully processed for your hotel booking.</p>" +
                         "<table style='width:100%; border-collapse: collapse;'>" +
-                        "<tr><td style='padding:8px; border:1px solid #ddd;'><b>Order ID:</b></td>" +
-                        "<td style='padding:8px; border:1px solid #ddd;'>" + orderId + "</td></tr>" +
-                        "<tr><td style='padding:8px; border:1px solid #ddd;'><b>Payment ID:</b></td>" +
-                        "<td style='padding:8px; border:1px solid #ddd;'>" + paymentId + "</td></tr>" +
-                        "<tr><td style='padding:8px; border:1px solid #ddd;'><b>Hotel:</b></td>" +
-                        "<td style='padding:8px; border:1px solid #ddd;'>" + hotelName + "</td></tr>" +
-                        "<tr><td style='padding:8px; border:1px solid #ddd;'><b>Amount:</b></td>" +
-                        "<td style='padding:8px; border:1px solid #ddd;'>₹" + (amount / 100.0) + "</td></tr>" +
+                        "<tr><td><b>Order ID:</b></td><td>" + orderId + "</td></tr>" +
+                        "<tr><td><b>Payment ID:</b></td><td>" + paymentId + "</td></tr>" +
+                        "<tr><td><b>Hotel:</b></td><td>" + hotelName + "</td></tr>" +
+                        "<tr><td><b>Amount:</b></td><td>₹" + (amount / 100.0) + "</td></tr>" +
                         "</table>" +
                         "<p>Your detailed invoice is attached to this email.</p>" +
-                        "<p>Thank you for choosing <b>StaySearch</b>. We look forward to serving you!</p>" +
-                        "<br><p style='color:gray; font-size:12px;'>This is an automated email. Please do not reply.</p>" +
+                        "<p>Thank you for choosing <b>StaySearch</b>.</p>" +
+                        "<p style='color:gray; font-size:12px;'>This is an automated email. Please do not reply.</p>" +
                         "</body></html>";
 
-        helper.setText(htmlContent, true);
+        Content content = new Content("text/html", htmlContent);
+        Mail mail = new Mail(from, subject, to, content);
 
-        helper.addAttachment("Invoice-" + orderId + ".pdf", () -> new ByteArrayInputStream(pdfBytes));
+        // ✅ Add PDF as attachment
+        Attachments attachments = new Attachments();
+        attachments.setContent(Base64.getEncoder().encodeToString(pdfBytes));
+        attachments.setType("application/pdf");
+        attachments.setFilename("Invoice-" + orderId + ".pdf");
+        attachments.setDisposition("attachment");
+        mail.addAttachments(attachments);
 
-        mailSender.send(message);
+        SendGrid sg = new SendGrid(sendGridApiKey);
+        Request request = new Request();
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+
+        Response response = sg.api(request);
+        System.out.println("Status Code: " + response.getStatusCode());
+        System.out.println("Body: " + response.getBody());
     }
 
     private String uploadToCloudinary(byte[] pdfBytes, String orderId) throws Exception {

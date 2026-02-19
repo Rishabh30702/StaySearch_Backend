@@ -141,10 +141,10 @@ public class SecurityConfig {
 
         config.setAllowedOrigins(List.of(
                 "https://upstdcstaysearch.igiletechnologies.com",
-                "https://upstdcstaysearch.com"
+                "https://upstdcstaysearch.com",
                 // add localhost ONLY in dev profile
                 // remove these when on testing env
-//                "http://localhost:4200"
+                "http://localhost:4200"
         ));
 
         config.setAllowedMethods(List.of(
