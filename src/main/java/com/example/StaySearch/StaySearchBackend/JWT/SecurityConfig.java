@@ -106,6 +106,8 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+
+                        .requestMatchers(HttpMethod.POST, "/api/payments/callback").permitAll()
                         // 1. ADMIN ONLY - High Priority
                         .requestMatchers("/auth/approve/hotelier/**").hasAnyAuthority("ADMIN", "Admin")
                         .requestMatchers("/auth/reject/**").hasAnyAuthority("ADMIN", "Admin")
@@ -114,17 +116,17 @@ public class SecurityConfig {
                          .requestMatchers("/v1/deleteHotel/**").hasAnyAuthority("ADMIN", "Admin")
 
                         .requestMatchers("/auth/allUsers", "/auth/delete/**").hasAnyAuthority("ADMIN", "Admin")
-                        .requestMatchers(HttpMethod.GET,"/api/payments/invoice" ).hasAnyAuthority("ADMIN", "Admin")
+                      .requestMatchers(HttpMethod.GET,"/api/payments/invoice" ).hasAnyAuthority("ADMIN", "Admin")
 
 
                         // 2. HOTELIER & ADMIN - Middle Priority
                         .requestMatchers( "/v1/mine/hotels/**").hasAuthority("Hotelier")
                         .requestMatchers(HttpMethod.PATCH, "/v1/updateHotel/**").hasAnyAuthority("Hotelier", "ADMIN", "Admin")
-                        .requestMatchers("/api/payments/callback").permitAll()
-
 
                         // 3. AUTHENTICATED USERS
                         .requestMatchers("/auth/me/**", "/auth/wishlist/**").authenticated()
+
+
 
 
                         // 4. PUBLIC - Everything else
@@ -146,7 +148,8 @@ public class SecurityConfig {
                 "https://upstdcstaysearch.com",
                 // add localhost ONLY in dev profile
                 // remove these when on testing env
-                "http://localhost:4200"
+                "http://localhost:4200",
+                "https://api.razorpay.com"
         ));
 
         config.setAllowedMethods(List.of(
@@ -154,17 +157,28 @@ public class SecurityConfig {
         ));
 
         config.setAllowedHeaders(List.of(
-                "Authorization",
-                "Content-Type",
-                "X-Requested-With", // Add this
-                "Accept",           // Add this
-                "Origin"
+                "Authorization",   // Required for JWT
+                "Content-Type",    // Required for JSON and Form POSTs
+                "Accept",          // Standard
+                "X-Requested-With"
         ));
 
         config.setAllowCredentials(true);
 
+
+        // 2. RAZORPAY CALLBACK CONFIG (The "Surgical" Fix)
+        CorsConfiguration callbackConfig = new CorsConfiguration();
+        // Use allowOriginPatterns for the 'null' origin from browsers
+        callbackConfig.setAllowedOriginPatterns(List.of("*"));
+        callbackConfig.setAllowedMethods(List.of("POST"));
+        callbackConfig.setAllowedHeaders(List.of("Content-Type"));
+        // Safety: Disable credentials (cookies) for this specific path
+        callbackConfig.setAllowCredentials(false);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/payments/callback", callbackConfig);
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 
