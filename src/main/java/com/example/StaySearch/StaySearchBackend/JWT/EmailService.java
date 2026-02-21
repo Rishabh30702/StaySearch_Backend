@@ -1,27 +1,46 @@
 package com.example.StaySearch.StaySearchBackend.JWT;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.Response;
+import com.sendgrid.SendGrid;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
+import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.stereotype.Service;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+
+
+import java.io.IOException;
 
 @Service
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    @Value("${sendgrid.api.key}")
+    private String sendGridApiKey;
+
+    @Value("${sendgrid.from.email}")
+    private String fromEmail;
 
     public void sendEmail(String to, String subject, String content) {
+        Email from = new Email("contact@valliento.tech");
+        Email toEmail = new Email(to);
+
+        Content emailContent = new Content("text/html", content);
+        Mail mail = new Mail(from, subject, toEmail, emailContent);
+
+        SendGrid sg = new SendGrid(sendGridApiKey);
+        Request request = new Request();
+
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(content, true); // ✅ HTML content enabled
-            mailSender.send(message);
-        } catch (MessagingException e) {
-            e.printStackTrace();
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+
+            Response response = sg.api(request);
+            System.out.println("✅ Email sent! Status code: " + response.getStatusCode());
+        } catch (IOException ex) {
+            System.err.println("❌ Error sending email: " + ex.getMessage());
         }
     }
 }
