@@ -148,7 +148,6 @@ public class SecurityConfig {
                 "https://upstdcstaysearch.com",
                 // add localhost ONLY in dev profile
                 // remove these when on testing env
-                "http://localhost:4200",
                 "https://api.razorpay.com"
         ));
 
