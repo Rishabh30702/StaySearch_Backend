@@ -28,6 +28,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -130,33 +131,27 @@ public class AuthController {
 
 
     @PostMapping("/normallogin")
-    public ResponseEntity<?> normalLogin(@RequestBody User user, HttpServletRequest request) {
-        // 🛡️ 1. Rate Limiting Check (Security Audit Requirement)
+    public ResponseEntity<?> normalLogin(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
         String ip = request.getRemoteAddr();
-        Bucket bucket = rateLimitingService.resolveBucket(ip);
+        String username = loginRequest.getUsername();
 
-        if (!bucket.tryConsume(1)) {
+        // 1. IP-based Rate Limiting
+        if (!rateLimitingService.resolveBucket(ip).tryConsume(1)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(Map.of("message", "Too many login attempts. Please try again in 20 minutes."));
+                    .body(Map.of("message", "Too many attempts. Try again later"));
         }
 
+
         try {
-            // 🛡️ 2. Authentication (Spring Security)
+            // 3. Spring Security handles the query securely via UserDetailsService
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
+                    new UsernamePasswordAuthenticationToken(username, loginRequest.getPassword()));
 
-            // 🛡️ 3. Token Generation
-            String token = jwtUtil.generateToken(user.getUsername());
-
-            // 🛡️ 4. Success Response
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Login successful");
-            response.put("token", token);
-
-            return ResponseEntity.ok(response);
+            String token = jwtUtil.generateToken(username);
+            return ResponseEntity.ok(Map.of("message", "Login successful", "token", token));
 
         } catch (AuthenticationException e) {
-            // 🛡️ 5. Handle Invalid Credentials
+            // 4. Return generic response to prevent User Enumeration
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid username or password"));
         }
@@ -226,14 +221,49 @@ public class AuthController {
     }
 
     @PostMapping("/me/update")
-    public ResponseEntity<Map<String, String>> updateUserProfile(@RequestBody User request) {
+    public ResponseEntity<?> updateUserProfile(@Valid @RequestBody ProfileUpdateRequest request) {
+
+        //  Perform the update
         userService.saveDetailsForCurrentUser(request.getFullname(), request.getPhonenumber());
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "User profile updated successfully.");
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of("message", "User profile updated successfully."));
     }
+
+    public static class ProfileUpdateRequest {
+
+        // Only allow alphanumeric, spaces, dots, and hyphens.
+        // This rejects symbols like ' ; - UNION SELECT
+        @NotBlank
+        @Pattern(regexp = "^[a-zA-Z0-9\\s\\.\\-]{1,50}$", message = "Invalid characters in name")
+        private String fullname;
+
+        // Only allow digits, optional plus sign, spaces, and hyphens
+        @NotBlank
+        @Pattern(regexp = "^\\+?[0-9\\s\\-]{7,15}$", message = "Invalid phone number")
+        private String phonenumber;
+
+
+        public String getFullname() {
+            return fullname;
+        }
+
+        public void setFullname(String fullname) {
+            this.fullname = fullname;
+        }
+
+        public String getPhonenumber() {
+            return phonenumber;
+        }
+        public void setPhonenumber(String phonenumber) {
+            this.phonenumber = phonenumber;
+        }
+
+
+
+    }
+
+
+
     @GetMapping("/allUsers")
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAllUsers();
@@ -634,43 +664,46 @@ public class AuthController {
 
 
     @PostMapping("/login/admin")
-    public ResponseEntity<?> loginAdmin(@RequestBody User userRequest, HttpServletRequest request) {
-        // 🛡️ 1. Rate Limiting Check (Stricter for Admin)
+    public ResponseEntity<?> loginAdmin(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
+        // 1. Rate Limiting Check (Must be first)
         String ip = request.getRemoteAddr();
-        Bucket bucket = rateLimitingService.resolveAdminBucket(ip); // resolveAdminBucket(ip)
-
-        if (!bucket.tryConsume(1)) {
+        if (!rateLimitingService.resolveAdminBucket(ip).tryConsume(1)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(Map.of("message", "Too many admin login attempts. Try again Later."));
+                    .body(Map.of("message", "Too many attempts. Please try again later."));
         }
 
-        // 🛡️ 2. Fetch User & Check Role BEFORE Authenticating
-        // This saves CPU cycles if the user isn't even an admin
-        Optional<User> optionalUser = userRepository.findByUsername(userRequest.getUsername());
-
-        if (optionalUser.isEmpty() || !"ADMIN".equalsIgnoreCase(optionalUser.get().getRole())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid credentials"));
+        // 2. Basic Input Validation (Sanitization)
+        if (loginRequest.getUsername() == null || loginRequest.getUsername().length() > 50) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid input."));
         }
 
+        // 3. Secure Authentication Logic
         try {
-            // 🛡️ 3. Authenticate
+            // Authenticate first. If this fails, it throws an AuthenticationException.
+            // This avoids checking the DB manually for the role, preventing user enumeration.
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(userRequest.getUsername(), userRequest.getPassword()));
+                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-            // 🛡️ 4. Generate Admin Token
-            String token = jwtUtil.generateToken(userRequest.getUsername());
+            // If we reach here, credentials are valid. Now check if they are actually an ADMIN.
+            User user = userRepository.findByUsername(loginRequest.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Admin login successful");
-            response.put("token", token);
-            return ResponseEntity.ok(response);
+            if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials"));
+            }
+
+            String token = jwtUtil.generateToken(loginRequest.getUsername());
+            return ResponseEntity.ok(Map.of("message", "Admin login successful", "token", token));
 
         } catch (Exception e) {
+            // Generic error message for both wrong password AND non-admin roles
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid credentials"));
         }
     }
+
+
+
 
 
 

@@ -12,10 +12,12 @@ com\example\StaySearch\StaySearchBackend\CommercialAndOffers\OfferService.class
 com\example\StaySearch\StaySearchBackend\PaymentGateway\HDFC\HdfcPaymentRequest.class
 com\example\StaySearch\StaySearchBackend\Hotels\HotelierService.class
 com\example\StaySearch\StaySearchBackend\JWT\AuthController.class
+com\example\StaySearch\StaySearchBackend\JWT\AuthController$ProfileUpdateRequest.class
 com\example\StaySearch\StaySearchBackend\HotelFeedback\HotelFeedbackService.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\InformationalPageController.class
 com\example\StaySearch\StaySearchBackend\Security\RateLimitingService.class
 com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\PromotionalMaterial.class
+com\example\StaySearch\StaySearchBackend\JWT\LoginRequest.class
 com\example\StaySearch\StaySearchBackend\JWT\User.class
 com\example\StaySearch\StaySearchBackend\CloudinaryConfig\CloudinaryConfig.class
 com\example\StaySearch\StaySearchBackend\ContactUs\Contact_Controller.class

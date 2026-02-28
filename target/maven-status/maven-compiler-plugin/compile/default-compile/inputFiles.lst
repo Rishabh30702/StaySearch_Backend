@@ -33,6 +33,7 @@ D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\Sta
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\EmailService.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\JwtAuthenticationFilter.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\JwtUtil.java
+D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\LoginRequest.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\SecurityConfig.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\User.java
 D:\Valliento\Projects\StaySearch\StaySearchBackend\src\main\java\com\example\StaySearch\StaySearchBackend\JWT\UserRepository.java
