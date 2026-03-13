@@ -14,6 +14,8 @@ public class LoginRequest {
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 32, message = "Password must be between 8 and 32 characters")
     private String password;
+    @NotBlank
+    private String captchaToken;
 
 
     public String getUsername() {
@@ -31,6 +33,14 @@ public class LoginRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getCaptchaToken() {
+        return captchaToken;
+    }
+
+    public void setCaptchaToken(String captchaToken) {
+        this.captchaToken = captchaToken;
     }
 
 }

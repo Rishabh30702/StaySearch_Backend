@@ -8,6 +8,7 @@ import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -63,9 +64,11 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
 
                 .headers(headers -> headers
-
                         // 🔒 HSTS
                         .httpStrictTransportSecurity(hsts -> hsts
                                 .maxAgeInSeconds(31536000)
@@ -83,26 +86,23 @@ public class SecurityConfig {
                                         "style-src 'self' 'unsafe-inline'; " +
                                         "img-src 'self' data: https:; " +
                                         "object-src 'none'; " +
-                                        "base-uri 'self'; " +
-                                        "frame-ancestors 'self'; " +
                                         "upgrade-insecure-requests"
                         ))
 
-                        // 🧪 MIME sniffing (NON-deprecated)
-                        .addHeaderWriter(new StaticHeadersWriter(
-                                "X-Content-Type-Options", "nosniff"
-                        ))
+                        // 🧪 MIME sniffing (Standard built-in)
+                        .contentTypeOptions(contentType -> {})
 
-                        // 🔁 Referrer Policy (NON-deprecated)
-                        .addHeaderWriter(new StaticHeadersWriter(
-                                "Referrer-Policy", "no-referrer-when-downgrade"
-                        ))
+                        // 🔁 Referrer Policy (Standard built-in)
+                        .referrerPolicy(referrer -> referrer
+                                .policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER_WHEN_DOWNGRADE)
+                        )
 
-                        // 🧠 Permissions Policy (NON-deprecated)
-                        .addHeaderWriter(new StaticHeadersWriter(
-                                "Permissions-Policy",
-                                "geolocation=(), microphone=(), camera=(), notifications=(), midi=()"
-                        ))
+                        // 🧠 Permissions Policy (Using HeaderWriter to avoid 6.4 deprecation)
+                        .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy",
+                                "geolocation=(), microphone=(), camera=(), notifications=(), midi=()"))
+
+                        // 🛡 Legacy XSS Protection (Required by your scan)
+                        .addHeaderWriter(new StaticHeadersWriter("X-XSS-Protection", "1; mode=block"))
                 )
 
                 .authorizeHttpRequests(auth -> auth
@@ -148,6 +148,7 @@ public class SecurityConfig {
                 "https://upstdcstaysearch.com",
                 // add localhost ONLY in dev profile
                 // remove these when on testing env
+
                 "https://api.razorpay.com"
         ));
 
@@ -168,7 +169,10 @@ public class SecurityConfig {
         // 2. RAZORPAY CALLBACK CONFIG (The "Surgical" Fix)
         CorsConfiguration callbackConfig = new CorsConfiguration();
         // Use allowOriginPatterns for the 'null' origin from browsers
-        callbackConfig.setAllowedOriginPatterns(List.of("*"));
+        callbackConfig.setAllowedOrigins(List.of(
+                "https://api.razorpay.com",
+                "https://razorpay.com"
+        ));
         callbackConfig.setAllowedMethods(List.of("POST"));
         callbackConfig.setAllowedHeaders(List.of("Content-Type"));
         // Safety: Disable credentials (cookies) for this specific path

@@ -55,6 +55,9 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
+    private CaptchaService captchaService;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -135,23 +138,39 @@ public class AuthController {
         String ip = request.getRemoteAddr();
         String username = loginRequest.getUsername();
 
-        // 1. IP-based Rate Limiting
+        // 1. Check Hard Block
+        if (rateLimitingService.isIpBlocked(ip)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "IP Locked. Try in 15 mins."));
+        }
+        // 2. IP-based Rate Limiting
         if (!rateLimitingService.resolveBucket(ip).tryConsume(1)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(Map.of("message", "Too many attempts. Try again later"));
+                    .body(Map.of("message", "Too many attempts from this IP. Try again later."));
         }
+
+        // 1. Server-Side CAPTCHA Validation (The bypass fix for CWE-288)
+        // Always check the CAPTCHA before rate-limiting or authentication
+        boolean isHuman = captchaService.verify(loginRequest.getCaptchaToken(), ip);
+        if (!isHuman) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "CAPTCHA verification failed. Please try again."));
+        }
+
+
 
 
         try {
             // 3. Spring Security handles the query securely via UserDetailsService
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, loginRequest.getPassword()));
-
+            rateLimitingService.resetAttempts(ip);
+            // 4. Generate JWT on successful authentication
             String token = jwtUtil.generateToken(username);
             return ResponseEntity.ok(Map.of("message", "Login successful", "token", token));
 
         } catch (AuthenticationException e) {
-            // 4. Return generic response to prevent User Enumeration
+            // 5. Return generic response to prevent User Enumeration
+            rateLimitingService.recordFailedAttempt(ip);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid username or password"));
         }
@@ -665,26 +684,43 @@ public class AuthController {
 
     @PostMapping("/login/admin")
     public ResponseEntity<?> loginAdmin(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
-        // 1. Rate Limiting Check (Must be first)
         String ip = request.getRemoteAddr();
-        if (!rateLimitingService.resolveAdminBucket(ip).tryConsume(1)) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(Map.of("message", "Too many attempts. Please try again later."));
+
+        // 1. Check Hard Block
+        if (rateLimitingService.isIpBlocked(ip)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "IP Locked. Try again later"));
         }
 
-        // 2. Basic Input Validation (Sanitization)
+        // 2. Throttling (Bucket4j)
+        if (!rateLimitingService.resolveAdminBucket(ip).tryConsume(1)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of("message", "Too many attempts."));
+        }
+
+        // 1. Server-Side CAPTCHA Validation (The bypass fix)
+        // This prevents attackers from using Burp Suite to skip the UI captcha
+        boolean isHuman = captchaService.verify(loginRequest.getCaptchaToken(), ip);
+        if (!isHuman) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "CAPTCHA verification failed. Please try again."));
+        }
+
+
+
+        // 3. Basic Input Validation
         if (loginRequest.getUsername() == null || loginRequest.getUsername().length() > 50) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid input."));
         }
 
-        // 3. Secure Authentication Logic
+        // 4. Secure Authentication Logic
         try {
-            // Authenticate first. If this fails, it throws an AuthenticationException.
-            // This avoids checking the DB manually for the role, preventing user enumeration.
+            // Authenticate credentials
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-            // If we reach here, credentials are valid. Now check if they are actually an ADMIN.
+
+            // Success: Clear strikes
+            rateLimitingService.resetAttempts(ip);
+            // Check Admin Role
             User user = userRepository.findByUsername(loginRequest.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -696,7 +732,8 @@ public class AuthController {
             return ResponseEntity.ok(Map.of("message", "Admin login successful", "token", token));
 
         } catch (Exception e) {
-            // Generic error message for both wrong password AND non-admin roles
+            // Generic error message to prevent user enumeration
+            rateLimitingService.recordFailedAttempt(ip);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid credentials"));
         }

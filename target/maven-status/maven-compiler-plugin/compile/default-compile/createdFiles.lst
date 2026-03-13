@@ -55,6 +55,7 @@ com\example\StaySearch\StaySearchBackend\PlatformContentUpdate\InformationalPage
 com\example\StaySearch\StaySearchBackend\JWT\AuthController$RegisterRequest.class
 com\example\StaySearch\StaySearchBackend\Razorpay\RazorpayClient.class
 com\example\StaySearch\StaySearchBackend\Razorpay\InvoiceService.class
+com\example\StaySearch\StaySearchBackend\JWT\CaptchaService.class
 com\example\StaySearch\StaySearchBackend\Razorpay\Dtos$CreateOrderRequest.class
 com\example\StaySearch\StaySearchBackend\CommercialAndOffers\SchedulerConfig.class
 com\example\StaySearch\StaySearchBackend\Razorpay\InvoiceRequest.class
