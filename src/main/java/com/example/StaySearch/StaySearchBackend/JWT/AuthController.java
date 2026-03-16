@@ -135,7 +135,23 @@ public class AuthController {
 
     @PostMapping("/normallogin")
     public ResponseEntity<?> normalLogin(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
-        String ip = request.getRemoteAddr();
+
+        String ip = request.getHeader("CF-Connecting-IP");
+
+        // 2. Fallback to X-Forwarded-For
+        if (ip == null || ip.isEmpty()) {
+            ip = request.getHeader("X-Forwarded-For");
+            if (ip != null && !ip.isEmpty()) {
+                ip = ip.split(",")[0].trim();
+            }
+        }
+
+        // 3. Absolute fallback to direct remote address
+        if (ip == null || ip.isEmpty()) {
+            ip = request.getRemoteAddr();
+        }
+
+
         String username = loginRequest.getUsername();
 
         // 1. Check Hard Block
@@ -698,7 +714,21 @@ public class AuthController {
 
     @PostMapping("/login/admin")
     public ResponseEntity<?> loginAdmin(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
-        String ip = request.getRemoteAddr();
+
+        String ip = request.getHeader("CF-Connecting-IP");
+
+        // 2. Fallback to X-Forwarded-For
+        if (ip == null || ip.isEmpty()) {
+            ip = request.getHeader("X-Forwarded-For");
+            if (ip != null && !ip.isEmpty()) {
+                ip = ip.split(",")[0].trim();
+            }
+        }
+
+        // 3. Absolute fallback to direct remote address
+        if (ip == null || ip.isEmpty()) {
+            ip = request.getRemoteAddr();
+        }
 
         // 1. Check Hard Block (IP Blacklist)
         if (rateLimitingService.isIpBlocked(ip)) {
